@@ -11,7 +11,7 @@ export type ConversationStatus = 'active' | 'ended';
 export type PersonaType = 'user' | 'system';
 export type PipelineMode = 'full' | 'echo';
 export type DocumentRetrievalStrategy = 'speed' | 'quality' | 'balanced';
-export type JsonPatchOperation = 'add' | 'remove' | 'replace' | 'copy' | 'move' | 'test';
+export type JsonPatchOp = 'add' | 'remove' | 'replace' | 'copy' | 'move' | 'test';
 
 // ============================================================================
 // Conversation Types
@@ -163,7 +163,7 @@ export interface ListPersonasResponse {
 }
 
 export interface JsonPatchOperation {
-  op: JsonPatchOperation;
+  op: JsonPatchOp;
   path: string;
   value?: any; // Not required for 'remove' operation
   from?: string; // Required for 'copy' and 'move' operations

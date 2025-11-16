@@ -1,0 +1,17 @@
+# ConvoAI Studio Code Owners
+# These owners will be requested for review when PRs touch these files
+
+# Global owners
+* @nr8r-dev-team
+
+# Core API wrapper
+/lib/ @nr8r-dev-team
+/types/ @nr8r-dev-team
+
+# Documentation
+/docs/ @nr8r-dev-team
+
+# Frontend
+/app/ @nr8r-dev-team
+/components/ @nr8r-dev-team
+

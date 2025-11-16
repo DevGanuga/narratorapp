@@ -1,5 +1,12 @@
 # Tavus API Reference Documentation
 
+**ConvoAI Studio by NR8R**  
+*Internal Technical Documentation*
+
+---
+
+> **Note**: This is proprietary technical documentation for NR8R's ConvoAI Studio. The Tavus API powers our conversational AI platform. This document is for internal team use only.
+
 ## Overview
 
 Tavus APIs allow you to create a Conversational Video Interface (CVI), an end-to-end pipeline for building real-time video conversations with an AI replica. Each replica is integrated with a persona that enables it to see, hear, and respond like a human.

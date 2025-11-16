@@ -1,4 +1,11 @@
-# Tavus API Quick Reference
+# ConvoAI Studio - API Quick Reference
+
+**Internal Reference Guide**  
+*NR8R Development Team*
+
+---
+
+> **Note**: Quick reference for ConvoAI Studio API endpoints. For internal team use only.
 
 A concise reference guide for all Tavus API endpoints.
 

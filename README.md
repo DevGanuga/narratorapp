@@ -1,10 +1,26 @@
-# Narrator App - Tavus API White-Label Wrapper
+# ConvoAI Studio
 
-A white-label solution for integrating Tavus Conversational Video Interface (CVI) API into your agency's offerings.
+**A proprietary conversational AI platform by [NR8R](https://narrator.studio)**
+
+ConvoAI Studio is an award-winning creative agency's internal tool for creating real-time, human-like multimodal video conversations with AI replicas. Built to empower storytellers and creatives with cutting-edge AI conversation technology.
+
+---
+
+## About NR8R
+
+**Narrator** is an artist-focused creative agency, production hub, and post campus partnering with storytellers to create visually compelling marketing materials and immersive campaigns that celebrate stories from all over the world.
+
+### Our Mission
+We are an award-winning creative agency working shoulder to shoulder with artists, filmmakers, and storytellers to celebrate and share their vision with the world.
+
+### Our Values
+As NR8Rs we are driven to continuously improve, innovate, and expand our capabilities in a rapidly evolving industry. We celebrate the unique perspective and contribution of every individual, taking proactive steps to cultivate creative environments that reflect the rich diversity of our community. We take ownership of our actions and decisions, with a commitment to deliver on our promises with transparency and integrity.
+
+---
 
 ## Overview
 
-This project wraps the Tavus API to provide real-time, human-like multimodal video conversations with AI replicas. Each replica can see, hear, and respond like a human through an end-to-end conversational pipeline.
+ConvoAI Studio provides real-time, human-like multimodal video conversations with AI replicas. Each replica can see, hear, and respond like a human through an end-to-end conversational pipeline.
 
 ### Core Components
 
@@ -130,8 +146,15 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## License
 
-Proprietary - For agency use only
+**Proprietary & Confidential**  
+© 2025 NR8R (Narrator Studio). All rights reserved.
 
-## Support
+This software is proprietary to NR8R and is intended for internal use only. Unauthorized copying, distribution, modification, or use of this software is strictly prohibited.
 
-For questions or issues, contact your development team.
+## Team & Support
+
+For questions, issues, or feature requests, contact the NR8R development team.
+
+---
+
+**Built with ❤️ by the NR8R team**

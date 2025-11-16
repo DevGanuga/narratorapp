@@ -11,6 +11,7 @@ import type {
   ConversationResponse,
   CreatePersonaRequest,
   PersonaResponse,
+  PatchPersonaRequest,
 } from '@/types/tavus';
 
 /**
@@ -86,11 +87,7 @@ export async function listPersonasAction(params?: {
 
 export async function patchPersonaAction(
   personaId: string,
-  operations: Array<{
-    op: 'add' | 'remove' | 'replace' | 'copy' | 'move' | 'test';
-    path: string;
-    value?: any;
-  }>
+  operations: PatchPersonaRequest
 ) {
   const client = getTavusClient();
   return await client.patchPersona(personaId, operations);

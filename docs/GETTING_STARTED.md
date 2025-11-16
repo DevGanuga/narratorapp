@@ -1,4 +1,11 @@
-# Getting Started with Tavus API Wrapper
+# Getting Started with ConvoAI Studio
+
+**Developer Onboarding Guide**  
+*NR8R Internal Tool*
+
+---
+
+> **Note**: This guide helps NR8R team members set up and start using ConvoAI Studio for development.
 
 This guide will walk you through setting up and using the Tavus API wrapper in your agency's applications.
 

@@ -1,4 +1,11 @@
-# Tavus API Usage Examples
+# ConvoAI Studio - Usage Examples
+
+**Internal Development Guide**  
+*For NR8R Team Members*
+
+---
+
+> **Note**: This document contains code examples and patterns for using ConvoAI Studio's API wrapper. These examples are for internal development purposes only.
 
 This document provides practical examples for using the Tavus API wrapper in your Next.js application.
 

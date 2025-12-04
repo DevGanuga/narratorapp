@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
+  weight: ["400"],
+  style: ["italic"],
 });
 
 export const metadata: Metadata = {
-  title: "ConvoAI Studio | Enterprise Conversational Video AI by NR8R",
-  description: "Professional conversational video intelligence platform. Create lifelike digital replicas and real-time video conversations powered by multimodal AI.",
+  title: "ConvoAI Studio | Conversational Video Intelligence by NR8R",
+  description: "Create photorealistic digital replicas and engage in real-time video conversations powered by multimodal AI. Professional tools built by storytellers, for storytellers.",
 };
 
 export default function RootLayout({
@@ -25,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
+        className={`${inter.variable} ${newsreader.variable} font-sans antialiased bg-[#0a0a0a] text-[#e8e6e3]`}
       >
         {children}
       </body>

@@ -16,8 +16,23 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "ConvoAI Studio | Conversational Video Intelligence by NR8R",
-  description: "Create photorealistic digital replicas and engage in real-time video conversations powered by multimodal AI. Professional tools built by storytellers, for storytellers.",
+  title: "ConvoAI Studio | by Narrator",
+  description: "Conversational video tools built by storytellers, for storytellers. Partner with us to bring your creative vision to life.",
+  icons: {
+    icon: [
+      { url: '/favicon_io-3/favicon.ico' },
+      { url: '/favicon_io-3/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon_io-3/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/favicon_io-3/apple-touch-icon.png' },
+    ],
+    other: [
+      { url: '/favicon_io-3/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/favicon_io-3/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
+  manifest: '/favicon_io-3/site.webmanifest',
 };
 
 export default function RootLayout({

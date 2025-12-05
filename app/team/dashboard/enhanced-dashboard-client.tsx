@@ -419,7 +419,370 @@ export function EnhancedDashboardClient() {
           </div>
         )}
 
-        {/* Form View - Continued in next message due to length */}
+        {/* Form View - New/Edit Project */}
+        {(view === 'new-project' || view === 'edit-project') && (
+          <div>
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <button
+                  onClick={() => { resetForm(); setView('projects'); }}
+                  className="inline-flex items-center gap-2 text-[13px] text-[#5a5a5a] hover:text-[#e8e6e3] transition-colors mb-4"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Back to Projects
+                </button>
+                <h1 className="text-[2rem] font-light tracking-[-0.02em]">
+                  {editingProject ? 'Edit Project' : 'Create New Project'}
+                </h1>
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="border-b border-white/[0.04] mb-8">
+              <div className="flex gap-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-6 py-3 text-[13px] border-b-2 transition-all ${
+                      activeTab === tab.id
+                        ? 'border-white/40 text-[#e8e6e3]'
+                        : 'border-transparent text-[#5a5a5a] hover:text-[#8a8a8a]'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={tab.icon} />
+                    </svg>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="max-w-3xl">
+              {/* Tab 1: Basic Info */}
+              {activeTab === 'basic' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Project Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      placeholder="BB King Performance Demo"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors resize-none"
+                      placeholder="Interactive performance for venue demos"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Partner/Client
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.partner}
+                      onChange={(e) => setFormData({ ...formData, partner: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      placeholder="Will Rogers Theatre"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Persona *
+                    </label>
+                    <select
+                      value={formData.persona_id}
+                      onChange={(e) => setFormData({ ...formData, persona_id: e.target.value })}
+                      className="w-full bg-[#0a0a0a] border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      required
+                    >
+                      <option value="">Select a persona...</option>
+                      {personas.map((persona) => (
+                        <option key={persona.persona_id} value={persona.persona_id}>
+                          {persona.persona_name}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedPersona && (
+                      <p className="mt-2 text-[12px] text-[#5a5a5a]">
+                        {selectedPersona.context?.substring(0, 150)}...
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Replica *
+                    </label>
+                    <select
+                      value={formData.replica_id}
+                      onChange={(e) => setFormData({ ...formData, replica_id: e.target.value })}
+                      className="w-full bg-[#0a0a0a] border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      required
+                    >
+                      <option value="">Select a replica...</option>
+                      {replicas.map((replica) => (
+                        <option key={replica.replica_id} value={replica.replica_id}>
+                          {replica.replica_name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-[12px] text-[#4a4a4a]">
+                      {replicas.length} completed replicas available
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Branding */}
+              {activeTab === 'branding' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Brand Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.brand_name}
+                      onChange={(e) => setFormData({ ...formData, brand_name: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      placeholder="Will Rogers Productions"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Brand Logo URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.brand_logo_url}
+                      onChange={(e) => setFormData({ ...formData, brand_logo_url: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                        Primary Color
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={formData.brand_primary_color}
+                          onChange={(e) => setFormData({ ...formData, brand_primary_color: e.target.value })}
+                          className="w-12 h-10 rounded-lg cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={formData.brand_primary_color}
+                          onChange={(e) => setFormData({ ...formData, brand_primary_color: e.target.value })}
+                          className="flex-1 bg-transparent border border-white/[0.08] rounded-lg px-4 py-2 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                        Background Color
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={formData.brand_background_color}
+                          onChange={(e) => setFormData({ ...formData, brand_background_color: e.target.value })}
+                          className="w-12 h-10 rounded-lg cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={formData.brand_background_color}
+                          onChange={(e) => setFormData({ ...formData, brand_background_color: e.target.value })}
+                          className="flex-1 bg-transparent border border-white/[0.08] rounded-lg px-4 py-2 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Content */}
+              {activeTab === 'customization' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Welcome Title
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.welcome_title}
+                      onChange={(e) => setFormData({ ...formData, welcome_title: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      placeholder="Experience BB King AI"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Welcome Message
+                    </label>
+                    <textarea
+                      value={formData.welcome_message}
+                      onChange={(e) => setFormData({ ...formData, welcome_message: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors resize-none"
+                      placeholder="Interactive conversation with the legend"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Instructions
+                    </label>
+                    <textarea
+                      value={formData.instructions}
+                      onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors resize-none"
+                      placeholder="Click 'Start Conversation' and speak naturally"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Custom Greeting
+                      <span className="text-[#4a4a4a] ml-2">(AI's first words)</span>
+                    </label>
+                    <textarea
+                      value={formData.custom_greeting}
+                      onChange={(e) => setFormData({ ...formData, custom_greeting: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors resize-none"
+                      placeholder="Hey there! I'm BB King. Ready to talk about the blues?"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Conversational Context
+                      <span className="text-[#4a4a4a] ml-2">(Additional persona instructions)</span>
+                    </label>
+                    <textarea
+                      value={formData.conversational_context}
+                      onChange={(e) => setFormData({ ...formData, conversational_context: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors resize-none"
+                      placeholder="You are BB King performing at Will Rogers Theatre. Discuss blues history, guitar techniques..."
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                        Call-to-Action Text
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.cta_text}
+                        onChange={(e) => setFormData({ ...formData, cta_text: e.target.value })}
+                        className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                        placeholder="Book This Experience"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                        CTA URL
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.cta_url}
+                        onChange={(e) => setFormData({ ...formData, cta_url: e.target.value })}
+                        className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                        placeholder="https://example.com/book"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Advanced */}
+              {activeTab === 'advanced' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Session Duration (hours)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.session_duration_hours}
+                      onChange={(e) => setFormData({ ...formData, session_duration_hours: parseInt(e.target.value) || 24 })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                      min="1"
+                      max="168"
+                    />
+                    <p className="mt-2 text-[12px] text-[#4a4a4a]">
+                      How long demo links remain valid (1-168 hours)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.show_narrator_branding}
+                        onChange={(e) => setFormData({ ...formData, show_narrator_branding: e.target.checked })}
+                        className="w-4 h-4 rounded border-white/[0.08] bg-transparent"
+                      />
+                      <span className="text-[13px] text-[#8a8a8a]">
+                        Show "Powered by Narrator" branding
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Actions */}
+              <div className="flex items-center gap-4 mt-12 pt-8 border-t border-white/[0.04]">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-3 bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.08] rounded-lg text-[13px] tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Saving...' : editingProject ? 'Update Project' : 'Create Project'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { resetForm(); setView('projects'); }}
+                  className="px-6 py-3 text-[13px] text-[#5a5a5a] hover:text-[#e8e6e3] transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </main>
     </div>
   );

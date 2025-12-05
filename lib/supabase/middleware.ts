@@ -9,11 +9,29 @@ export async function updateSession(request: NextRequest) {
         !request.nextUrl.pathname.startsWith('/demo/preview')) {
       return NextResponse.next({ request });
     }
-    // For protected routes without Supabase, redirect to login
+
+    // For protected routes without Supabase, check for admin session cookie
     if (request.nextUrl.pathname.startsWith('/team/dashboard')) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/team/login';
-      return NextResponse.redirect(url);
+      const adminSessionCookie = request.cookies.get('admin_session');
+      let hasAdminSession = false;
+
+      if (adminSessionCookie) {
+        try {
+          const sessionData = JSON.parse(adminSessionCookie.value);
+          if (sessionData.expiresAt && Date.now() < sessionData.expiresAt) {
+            hasAdminSession = true;
+          }
+        } catch {
+          hasAdminSession = false;
+        }
+      }
+
+      // Redirect to login if no valid admin session
+      if (!hasAdminSession) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/team/login';
+        return NextResponse.redirect(url);
+      }
     }
     return NextResponse.next({ request });
   }
@@ -49,9 +67,28 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Check for admin session cookie (cookie-based auth)
+  const adminSessionCookie = request.cookies.get('admin_session');
+  let hasAdminSession = false;
+
+  if (adminSessionCookie) {
+    try {
+      const sessionData = JSON.parse(adminSessionCookie.value);
+      // Check if session is not expired
+      if (sessionData.expiresAt && Date.now() < sessionData.expiresAt) {
+        hasAdminSession = true;
+      }
+    } catch {
+      // Invalid session cookie
+      hasAdminSession = false;
+    }
+  }
+
   // Protected routes - redirect to login if not authenticated
+  // Allow access if either Supabase user OR admin session exists
   if (
     !user &&
+    !hasAdminSession &&
     request.nextUrl.pathname.startsWith('/team') &&
     !request.nextUrl.pathname.startsWith('/team/login')
   ) {

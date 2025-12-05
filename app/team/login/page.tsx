@@ -24,7 +24,7 @@ export default function TeamLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!supabaseConfigured) {
       setError('Please configure Supabase first');
       return;
@@ -34,23 +34,22 @@ export default function TeamLoginPage() {
     setLoading(true);
 
     try {
-      // Dynamic import to avoid errors when not configured
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        setError(error.message);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to sign in');
       } else {
         router.push('/team/dashboard');
         router.refresh();
       }
     } catch {
-      setError('Connection error - check Supabase configuration');
+      setError('Connection error - please try again');
     } finally {
       setLoading(false);
     }

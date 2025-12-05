@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { DemoViewer } from './demo-viewer';
+import { BrandedDemoViewer } from './branded-demo-viewer';
 
 interface DemoPageProps {
   params: Promise<{ sessionId: string }>;
@@ -65,7 +65,7 @@ export default async function DemoPage({ params }: DemoPageProps) {
   }
 
   return (
-    <DemoViewer 
+    <BrandedDemoViewer
       session={session}
       project={project}
     />

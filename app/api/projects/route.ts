@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error} = await supabase
       .from('projects')
       .insert({
         name: body.name,
@@ -99,6 +99,17 @@ export async function POST(request: NextRequest) {
         custom_greeting: body.custom_greeting || null,
         conversational_context: body.conversational_context || null,
         branding: body.branding || null,
+        welcome_title: body.welcome_title || null,
+        welcome_message: body.welcome_message || null,
+        instructions: body.instructions || null,
+        brand_logo_url: body.brand_logo_url || null,
+        brand_name: body.brand_name || null,
+        brand_primary_color: body.brand_primary_color || '#ffffff',
+        brand_background_color: body.brand_background_color || '#0a0a0a',
+        cta_text: body.cta_text || null,
+        cta_url: body.cta_url || null,
+        session_duration_hours: body.session_duration_hours || 24,
+        show_narrator_branding: body.show_narrator_branding ?? true,
         status: 'draft',
         user_id: user.id,
       })

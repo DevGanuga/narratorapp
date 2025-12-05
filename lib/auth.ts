@@ -1,13 +1,34 @@
 /**
- * Authentication utilities using Supabase Auth
+ * Simple admin authentication using environment password
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+
+// Admin email allowlist
+const ALLOWED_ADMIN_EMAILS = [
+  'ari@narrator.studio',
+  'devganuga@gmail.com'
+];
+
+const SESSION_COOKIE_NAME = 'admin_session';
+const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export async function getUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  const cookieStore = await cookies();
+  const session = cookieStore.get(SESSION_COOKIE_NAME);
+
+  if (!session) return null;
+
+  try {
+    const userData = JSON.parse(session.value);
+    // Check if session is expired
+    if (Date.now() > userData.expiresAt) {
+      return null;
+    }
+    return { email: userData.email };
+  } catch {
+    return null;
+  }
 }
 
 export async function isAuthenticated(): Promise<boolean> {
@@ -15,34 +36,61 @@ export async function isAuthenticated(): Promise<boolean> {
   return !!user;
 }
 
-export async function signIn(email: string, password: string) {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+export async function isAllowedAdmin(email: string): Promise<boolean> {
+  return ALLOWED_ADMIN_EMAILS.includes(email.toLowerCase());
+}
 
-  if (error) {
-    return { success: false, error: error.message };
+export async function isAuthenticatedAdmin(): Promise<boolean> {
+  const user = await getUser();
+  if (!user || !user.email) return false;
+  return await isAllowedAdmin(user.email);
+}
+
+export function verifyPassword(password: string): boolean {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    throw new Error('ADMIN_PASSWORD not configured');
+  }
+  return password === adminPassword;
+}
+
+export async function signIn(email: string, password: string) {
+  // Check if email is in allowlist
+  if (!await isAllowedAdmin(email)) {
+    return { success: false, error: 'Access denied. This email is not authorized.' };
   }
 
-  return { success: true, user: data.user };
+  // Verify password
+  if (!verifyPassword(password)) {
+    return { success: false, error: 'Invalid password.' };
+  }
+
+  // Create session
+  const sessionData = {
+    email,
+    expiresAt: Date.now() + SESSION_DURATION
+  };
+
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE_NAME, JSON.stringify(sessionData), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_DURATION / 1000,
+    path: '/'
+  });
+
+  return { success: true, user: { email } };
 }
 
 export async function signOut() {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signOut();
-  
-  if (error) {
-    return { success: false, error: error.message };
-  }
-  
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE_NAME);
   return { success: true };
 }
 
 export async function getSession() {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+  const user = await getUser();
+  if (!user) return null;
+  return { user };
 }

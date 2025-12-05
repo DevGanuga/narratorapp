@@ -31,6 +31,18 @@ export interface Database {
           custom_greeting: string | null;
           conversational_context: string | null;
           branding: Json | null;
+          welcome_title: string | null;
+          welcome_message: string | null;
+          instructions: string | null;
+          brand_logo_url: string | null;
+          brand_name: string | null;
+          brand_primary_color: string;
+          brand_background_color: string;
+          cta_text: string | null;
+          cta_url: string | null;
+          custom_fields: Json;
+          session_duration_hours: number;
+          show_narrator_branding: boolean;
           status: 'draft' | 'active' | 'archived';
           demo_count: number;
           last_demo_at: string | null;
@@ -50,6 +62,18 @@ export interface Database {
           custom_greeting?: string | null;
           conversational_context?: string | null;
           branding?: Json | null;
+          welcome_title?: string | null;
+          welcome_message?: string | null;
+          instructions?: string | null;
+          brand_logo_url?: string | null;
+          brand_name?: string | null;
+          brand_primary_color?: string;
+          brand_background_color?: string;
+          cta_text?: string | null;
+          cta_url?: string | null;
+          custom_fields?: Json;
+          session_duration_hours?: number;
+          show_narrator_branding?: boolean;
           status?: 'draft' | 'active' | 'archived';
           demo_count?: number;
           last_demo_at?: string | null;
@@ -69,6 +93,18 @@ export interface Database {
           custom_greeting?: string | null;
           conversational_context?: string | null;
           branding?: Json | null;
+          welcome_title?: string | null;
+          welcome_message?: string | null;
+          instructions?: string | null;
+          brand_logo_url?: string | null;
+          brand_name?: string | null;
+          brand_primary_color?: string;
+          brand_background_color?: string;
+          cta_text?: string | null;
+          cta_url?: string | null;
+          custom_fields?: Json;
+          session_duration_hours?: number;
+          show_narrator_branding?: boolean;
           status?: 'draft' | 'active' | 'archived';
           demo_count?: number;
           last_demo_at?: string | null;
@@ -86,6 +122,11 @@ export interface Database {
           expires_at: string;
           completed_at: string | null;
           duration_seconds: number | null;
+          prospect_name: string | null;
+          prospect_email: string | null;
+          prospect_company: string | null;
+          referrer: string | null;
+          metadata: Json;
         };
         Insert: {
           id?: string;
@@ -97,6 +138,11 @@ export interface Database {
           expires_at: string;
           completed_at?: string | null;
           duration_seconds?: number | null;
+          prospect_name?: string | null;
+          prospect_email?: string | null;
+          prospect_company?: string | null;
+          referrer?: string | null;
+          metadata?: Json;
         };
         Update: {
           id?: string;
@@ -108,6 +154,11 @@ export interface Database {
           expires_at?: string;
           completed_at?: string | null;
           duration_seconds?: number | null;
+          prospect_name?: string | null;
+          prospect_email?: string | null;
+          prospect_company?: string | null;
+          referrer?: string | null;
+          metadata?: Json;
         };
       };
       team_members: {
@@ -161,4 +212,8 @@ export type DemoSessionInsert = Database['public']['Tables']['demo_sessions']['I
 export type DemoSessionUpdate = Database['public']['Tables']['demo_sessions']['Update'];
 
 export type TeamMember = Database['public']['Tables']['team_members']['Row'];
+
+
+
+
 

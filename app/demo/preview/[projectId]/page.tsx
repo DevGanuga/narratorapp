@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { PreviewViewer } from './preview-viewer';
+import { BrandedDemoViewer } from '../../[sessionId]/branded-demo-viewer';
 
 interface PreviewPageProps {
   params: Promise<{ projectId: string }>;
@@ -49,5 +49,23 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
     notFound();
   }
 
-  return <PreviewViewer project={project} />;
+  // Create mock session for preview
+  const mockSession = {
+    id: 'preview',
+    created_at: new Date().toISOString(),
+    project_id: project.id,
+    conversation_id: null,
+    conversation_url: null,
+    status: 'pending' as const,
+    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    completed_at: null,
+    duration_seconds: null,
+    prospect_name: null,
+    prospect_email: null,
+    prospect_company: null,
+    referrer: null,
+    metadata: {},
+  };
+
+  return <BrandedDemoViewer session={mockSession} project={project} />;
 }

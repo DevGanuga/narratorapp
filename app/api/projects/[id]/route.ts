@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  
+
   try {
+    // Check authentication (supports both admin cookie and Supabase)
+    const authUser = await requireAuth().catch(() => null);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,12 +37,6 @@ export async function GET(
         },
       }
     );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { data, error } = await supabase
       .from('projects')
@@ -59,8 +60,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  
+
   try {
+    // Check authentication (supports both admin cookie and Supabase)
+    const authUser = await requireAuth().catch(() => null);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -82,12 +89,6 @@ export async function PATCH(
         },
       }
     );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     
@@ -117,8 +118,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  
+
   try {
+    // Check authentication (supports both admin cookie and Supabase)
+    const authUser = await requireAuth().catch(() => null);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -140,12 +147,6 @@ export async function DELETE(
         },
       }
     );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { error } = await supabase
       .from('projects')

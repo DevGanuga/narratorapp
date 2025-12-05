@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { requireAuth } from '@/lib/auth-helpers';
 
 function generateDemoToken(): string {
   return `demo_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 11)}`;
@@ -11,8 +12,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  
+
   try {
+    // Check authentication (supports both admin cookie and Supabase)
+    const authUser = await requireAuth().catch(() => null);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,12 +41,6 @@ export async function POST(
         },
       }
     );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Get the project
     const { data: project, error: projectError } = await supabase

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { isAuthenticatedAdmin } from '@/lib/auth';
-import { DashboardClient } from './dashboard-client';
+import { EnhancedDashboardClient } from './enhanced-dashboard-client';
 
 export default async function DashboardPage() {
   const isAdmin = await isAuthenticatedAdmin();
@@ -9,7 +9,7 @@ export default async function DashboardPage() {
     redirect('/team/login');
   }
 
-  return <DashboardClient />;
+  return <EnhancedDashboardClient />;
 }
 
 

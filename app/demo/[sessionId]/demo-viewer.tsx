@@ -159,7 +159,7 @@ export function DemoViewer({ session, project }: DemoViewerProps) {
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
-                Start Conversation
+                Start Demo
               </button>
               
               <div className="mt-12 pt-8 border-t border-white/[0.04]">

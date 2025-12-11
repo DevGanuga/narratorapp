@@ -7,7 +7,8 @@ import { cookies } from 'next/headers';
 // Admin email allowlist
 const ALLOWED_ADMIN_EMAILS = [
   'ari@narrator.studio',
-  'devganuga@gmail.com'
+  'devganuga@gmail.com',
+  'admin@narrator.studio'
 ];
 
 const SESSION_COOKIE_NAME = 'admin_session';

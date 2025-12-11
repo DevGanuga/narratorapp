@@ -517,17 +517,37 @@ export function EnhancedDashboardClient() {
                       required
                     >
                       <option value="">Select a persona...</option>
-                      {personas.map((persona) => (
-                        <option key={persona.persona_id} value={persona.persona_id}>
-                          {persona.persona_name}
-                        </option>
-                      ))}
+                      {personas.filter((p: any) => p.persona_type === 'user').length > 0 && (
+                        <optgroup label="Your Personas">
+                          {personas
+                            .filter((p: any) => p.persona_type === 'user')
+                            .map((persona) => (
+                              <option key={persona.persona_id} value={persona.persona_id}>
+                                {persona.persona_name}
+                              </option>
+                            ))}
+                        </optgroup>
+                      )}
+                      {personas.filter((p: any) => p.persona_type === 'system').length > 0 && (
+                        <optgroup label="Tavus System Personas">
+                          {personas
+                            .filter((p: any) => p.persona_type === 'system')
+                            .map((persona) => (
+                              <option key={persona.persona_id} value={persona.persona_id}>
+                                {persona.persona_name}
+                              </option>
+                            ))}
+                        </optgroup>
+                      )}
                     </select>
                     {selectedPersona && (
                       <p className="mt-2 text-[12px] text-[#5a5a5a]">
                         {selectedPersona.context?.substring(0, 150)}...
                       </p>
                     )}
+                    <p className="mt-2 text-[12px] text-[#4a4a4a]">
+                      {personas.filter((p: any) => p.persona_type === 'user').length} your personas, {personas.filter((p: any) => p.persona_type === 'system').length} Tavus personas
+                    </p>
                   </div>
 
                   <div>
@@ -541,14 +561,31 @@ export function EnhancedDashboardClient() {
                       required
                     >
                       <option value="">Select a replica...</option>
-                      {replicas.map((replica) => (
-                        <option key={replica.replica_id} value={replica.replica_id}>
-                          {replica.replica_name}
-                        </option>
-                      ))}
+                      {replicas.filter((r: any) => r.replica_type === 'user').length > 0 && (
+                        <optgroup label="Your Replicas">
+                          {replicas
+                            .filter((r: any) => r.replica_type === 'user')
+                            .map((replica) => (
+                              <option key={replica.replica_id} value={replica.replica_id}>
+                                {replica.replica_name}
+                              </option>
+                            ))}
+                        </optgroup>
+                      )}
+                      {replicas.filter((r: any) => r.replica_type === 'system').length > 0 && (
+                        <optgroup label="Tavus System Replicas">
+                          {replicas
+                            .filter((r: any) => r.replica_type === 'system')
+                            .map((replica) => (
+                              <option key={replica.replica_id} value={replica.replica_id}>
+                                {replica.replica_name}
+                              </option>
+                            ))}
+                        </optgroup>
+                      )}
                     </select>
                     <p className="mt-2 text-[12px] text-[#4a4a4a]">
-                      {replicas.length} completed replicas available
+                      {replicas.filter((r: any) => r.replica_type === 'user').length} your replicas, {replicas.filter((r: any) => r.replica_type === 'system').length} Tavus replicas
                     </p>
                   </div>
                 </div>

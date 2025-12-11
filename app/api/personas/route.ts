@@ -26,24 +26,50 @@ export async function GET(request: NextRequest) {
   try {
     const client = createTavusClient();
     const searchParams = request.nextUrl.searchParams;
-    
+
     const limit = searchParams.get('limit');
     const page = searchParams.get('page');
     const persona_type = searchParams.get('persona_type');
-    
+
+    // If no persona_type specified, fetch both user and system personas
+    if (!persona_type) {
+      const [userPersonas, systemPersonas] = await Promise.all([
+        client.listPersonas({
+          limit: limit ? parseInt(limit) : undefined,
+          page: page ? parseInt(page) : undefined,
+          persona_type: 'user',
+        }),
+        client.listPersonas({
+          limit: limit ? parseInt(limit) : undefined,
+          page: page ? parseInt(page) : undefined,
+          persona_type: 'system',
+        }),
+      ]);
+
+      // Combine and return with type labels
+      return NextResponse.json({
+        data: [
+          ...userPersonas.data.map(p => ({ ...p, persona_type: 'user' as const })),
+          ...systemPersonas.data.map(p => ({ ...p, persona_type: 'system' as const })),
+        ],
+        total_count: userPersonas.total_count + systemPersonas.total_count,
+      });
+    }
+
+    // Fetch specific type if requested
     const personas = await client.listPersonas({
       limit: limit ? parseInt(limit) : undefined,
       page: page ? parseInt(page) : undefined,
-      persona_type: persona_type as 'user' | 'system' | undefined,
+      persona_type: persona_type as 'user' | 'system',
     });
-    
+
     return NextResponse.json(personas);
   } catch (error) {
     const apiError = error as TavusApiError;
     return NextResponse.json(
-      { 
+      {
         error: apiError.error || 'Failed to list personas',
-        message: apiError.message 
+        message: apiError.message
       },
       { status: apiError.status_code || 500 }
     );

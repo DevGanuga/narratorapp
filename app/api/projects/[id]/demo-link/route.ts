@@ -20,6 +20,9 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const body = await request.json();
+    const sessionId = body.session_id || generateDemoToken();
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,7 +64,6 @@ export async function POST(
     }
 
     // Create a new demo session
-    const sessionId = generateDemoToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
     const { data: session, error: sessionError } = await supabase
@@ -83,7 +85,7 @@ export async function POST(
     // Update project demo count
     await supabase
       .from('projects')
-      .update({ 
+      .update({
         demo_count: (project.demo_count || 0) + 1,
         last_demo_at: new Date().toISOString(),
       })

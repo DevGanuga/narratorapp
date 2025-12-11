@@ -207,17 +207,30 @@ export function EnhancedDashboardClient() {
     setGeneratingLink(projectId);
 
     try {
+      // Generate session ID client-side immediately
+      const sessionId = `demo_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 11)}`;
+      const baseUrl = window.location.origin;
+      const demo_url = `${baseUrl}/demo/${sessionId}`;
+
+      // Copy to clipboard immediately while in user gesture context
+      await navigator.clipboard.writeText(demo_url);
+      alert('Demo link copied to clipboard!');
+
+      // Now save to database asynchronously (doesn't need user gesture)
       const response = await fetch(`/api/projects/${projectId}/demo-link`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId }),
       });
 
-      if (response.ok) {
-        const { demo_url } = await response.json();
-        await navigator.clipboard.writeText(demo_url);
-        alert('Demo link copied to clipboard!');
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Failed to save demo link:', error);
+        alert(`Link copied but failed to save: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Failed to generate link:', error);
+      alert('Failed to generate demo link. Please try again.');
     }
 
     setGeneratingLink(null);

@@ -8,6 +8,15 @@ import { createClient } from '@/lib/supabase/client';
 import type { Project } from '@/types/database';
 import type { PersonaDetails, ReplicaDetails } from '@/types/tavus';
 
+// Extended types to include the persona_type and replica_type from API
+interface PersonaWithType extends PersonaDetails {
+  persona_type?: 'user' | 'system';
+}
+
+interface ReplicaWithType extends ReplicaDetails {
+  replica_type?: 'user' | 'system';
+}
+
 type View = 'projects' | 'new-project' | 'edit-project';
 type FormTab = 'basic' | 'branding' | 'customization' | 'advanced';
 
@@ -45,8 +54,8 @@ export function EnhancedDashboardClient() {
   const [view, setView] = useState<View>('projects');
   const [activeTab, setActiveTab] = useState<FormTab>('basic');
   const [projects, setProjects] = useState<Project[]>([]);
-  const [personas, setPersonas] = useState<PersonaDetails[]>([]);
-  const [replicas, setReplicas] = useState<ReplicaDetails[]>([]);
+  const [personas, setPersonas] = useState<PersonaWithType[]>([]);
+  const [replicas, setReplicas] = useState<ReplicaWithType[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState<EnhancedProjectForm>({
@@ -91,7 +100,7 @@ export function EnhancedDashboardClient() {
       }
       if (replicasRes.ok) {
         const data = await replicasRes.json();
-        setReplicas((data.data || []).filter((r: ReplicaDetails) => r.status === 'completed'));
+        setReplicas((data.data || []).filter((r: ReplicaWithType) => r.status === 'completed'));
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -517,10 +526,10 @@ export function EnhancedDashboardClient() {
                       required
                     >
                       <option value="">Select a persona...</option>
-                      {personas.filter((p: any) => p.persona_type === 'user').length > 0 && (
+                      {personas.filter(p => p.persona_type === 'user').length > 0 && (
                         <optgroup label="Your Personas">
                           {personas
-                            .filter((p: any) => p.persona_type === 'user')
+                            .filter(p => p.persona_type === 'user')
                             .map((persona) => (
                               <option key={persona.persona_id} value={persona.persona_id}>
                                 {persona.persona_name}
@@ -528,10 +537,10 @@ export function EnhancedDashboardClient() {
                             ))}
                         </optgroup>
                       )}
-                      {personas.filter((p: any) => p.persona_type === 'system').length > 0 && (
+                      {personas.filter(p => p.persona_type === 'system').length > 0 && (
                         <optgroup label="Tavus System Personas">
                           {personas
-                            .filter((p: any) => p.persona_type === 'system')
+                            .filter(p => p.persona_type === 'system')
                             .map((persona) => (
                               <option key={persona.persona_id} value={persona.persona_id}>
                                 {persona.persona_name}
@@ -546,7 +555,7 @@ export function EnhancedDashboardClient() {
                       </p>
                     )}
                     <p className="mt-2 text-[12px] text-[#4a4a4a]">
-                      {personas.filter((p: any) => p.persona_type === 'user').length} your personas, {personas.filter((p: any) => p.persona_type === 'system').length} Tavus personas
+                      {personas.filter(p => p.persona_type === 'user').length} your personas, {personas.filter(p => p.persona_type === 'system').length} Tavus personas
                     </p>
                   </div>
 
@@ -561,10 +570,10 @@ export function EnhancedDashboardClient() {
                       required
                     >
                       <option value="">Select a replica...</option>
-                      {replicas.filter((r: any) => r.replica_type === 'user').length > 0 && (
+                      {replicas.filter(r => r.replica_type === 'user').length > 0 && (
                         <optgroup label="Your Replicas">
                           {replicas
-                            .filter((r: any) => r.replica_type === 'user')
+                            .filter(r => r.replica_type === 'user')
                             .map((replica) => (
                               <option key={replica.replica_id} value={replica.replica_id}>
                                 {replica.replica_name}
@@ -572,10 +581,10 @@ export function EnhancedDashboardClient() {
                             ))}
                         </optgroup>
                       )}
-                      {replicas.filter((r: any) => r.replica_type === 'system').length > 0 && (
+                      {replicas.filter(r => r.replica_type === 'system').length > 0 && (
                         <optgroup label="Tavus System Replicas">
                           {replicas
-                            .filter((r: any) => r.replica_type === 'system')
+                            .filter(r => r.replica_type === 'system')
                             .map((replica) => (
                               <option key={replica.replica_id} value={replica.replica_id}>
                                 {replica.replica_name}
@@ -585,7 +594,7 @@ export function EnhancedDashboardClient() {
                       )}
                     </select>
                     <p className="mt-2 text-[12px] text-[#4a4a4a]">
-                      {replicas.filter((r: any) => r.replica_type === 'user').length} your replicas, {replicas.filter((r: any) => r.replica_type === 'system').length} Tavus replicas
+                      {replicas.filter(r => r.replica_type === 'user').length} your replicas, {replicas.filter(r => r.replica_type === 'system').length} Tavus replicas
                     </p>
                   </div>
                 </div>

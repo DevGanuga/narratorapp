@@ -95,6 +95,7 @@ export async function POST(
     });
   } catch (error) {
     console.error('Failed to create demo link:', error);
-    return NextResponse.json({ error: 'Failed to create demo link' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create demo link';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

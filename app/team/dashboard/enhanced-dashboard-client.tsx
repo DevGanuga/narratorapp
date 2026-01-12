@@ -220,9 +220,9 @@ export function EnhancedDashboardClient() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Failed to save demo link:', error);
-        alert(`Failed to save demo link: ${error.error || 'Unknown error'}`);
+        alert(`Failed to generate demo link: ${error.error || 'Unknown error'}`);
         return;
       }
 

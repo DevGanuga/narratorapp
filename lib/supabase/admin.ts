@@ -13,6 +13,11 @@ export function createServiceRoleClient() {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL is missing');
   }
 
-  return createClient<Database>(url, serviceKey);
+  return createClient<Database>(url, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 

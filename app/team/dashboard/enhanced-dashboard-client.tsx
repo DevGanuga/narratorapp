@@ -229,24 +229,32 @@ export function EnhancedDashboardClient() {
       // Copy with fallback for clipboard permission issues
       try {
         await navigator.clipboard.writeText(demo_url);
-        alert('Demo link copied to clipboard!');
-      } catch (clipboardError) {
+        alert('✅ Demo link copied to clipboard!\n\n' + demo_url);
+      } catch {
         // Fallback: use older method
         const textArea = document.createElement('textarea');
         textArea.value = demo_url;
         textArea.style.position = 'fixed';
         textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
+        
+        let copySuccess = false;
         try {
-          document.execCommand('copy');
-          alert('Demo link copied to clipboard!');
-        } catch (fallbackError) {
-          // If all fails, show the link
-          prompt('Copy this demo link:', demo_url);
+          copySuccess = document.execCommand('copy');
+        } catch {
+          copySuccess = false;
         }
         document.body.removeChild(textArea);
+        
+        if (copySuccess) {
+          alert('✅ Demo link copied to clipboard!\n\n' + demo_url);
+        } else {
+          // Show the link so user can manually copy
+          prompt('⚠️ Auto-copy failed. Please copy this link manually:', demo_url);
+        }
       }
     } catch (error) {
       console.error('Failed to generate link:', error);

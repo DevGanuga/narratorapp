@@ -207,12 +207,30 @@ export function EnhancedDashboardClient() {
     setGeneratingLink(projectId);
 
     try {
-      // Generate session ID client-side immediately
+      // Generate session ID and URL immediately
       const sessionId = `demo_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 11)}`;
       const baseUrl = window.location.origin;
       const demo_url = `${baseUrl}/demo/${sessionId}`;
 
-      // Save to database first so we never hand out dead links
+      // Create a hidden input for reliable copying during user gesture
+      const tempInput = document.createElement('input');
+      tempInput.value = demo_url;
+      tempInput.style.position = 'absolute';
+      tempInput.style.left = '-9999px';
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      tempInput.setSelectionRange(0, 99999);
+      
+      // Copy immediately while still in user gesture context
+      let copied = false;
+      try {
+        copied = document.execCommand('copy');
+      } catch {
+        copied = false;
+      }
+      document.body.removeChild(tempInput);
+
+      // Now save to database (async, happens after copy)
       const response = await fetch(`/api/projects/${projectId}/demo-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -222,39 +240,16 @@ export function EnhancedDashboardClient() {
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Failed to save demo link:', error);
-        alert(`Failed to generate demo link: ${error.error || 'Unknown error'}`);
+        alert(`⚠️ Link copied but failed to save to database!\n\nError: ${error.error}\n\nLink: ${demo_url}\n\n(Save this link now!)`);
         return;
       }
 
-      // Copy with fallback for clipboard permission issues
-      try {
-        await navigator.clipboard.writeText(demo_url);
-        alert('✅ Demo link copied to clipboard!\n\n' + demo_url);
-      } catch {
-        // Fallback: use older method
-        const textArea = document.createElement('textarea');
-        textArea.value = demo_url;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        let copySuccess = false;
-        try {
-          copySuccess = document.execCommand('copy');
-        } catch {
-          copySuccess = false;
-        }
-        document.body.removeChild(textArea);
-        
-        if (copySuccess) {
-          alert('✅ Demo link copied to clipboard!\n\n' + demo_url);
-        } else {
-          // Show the link so user can manually copy
-          prompt('⚠️ Auto-copy failed. Please copy this link manually:', demo_url);
-        }
+      // Success!
+      if (copied) {
+        alert(`✅ Demo link copied to clipboard!\n\n${demo_url}`);
+      } else {
+        // Fallback if copy failed
+        prompt('⚠️ Please copy this demo link:', demo_url);
       }
     } catch (error) {
       console.error('Failed to generate link:', error);

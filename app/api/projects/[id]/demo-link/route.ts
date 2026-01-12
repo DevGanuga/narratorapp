@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { requireAuth } from '@/lib/auth-helpers';
+import { createServiceRoleClient } from '@/lib/supabase/admin';
 
 function generateDemoToken(): string {
   return `demo_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 11)}`;
@@ -23,27 +22,8 @@ export async function POST(
     const body = await request.json();
     const sessionId = body.session_id || generateDemoToken();
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Ignore
-            }
-          },
-        },
-      }
-    );
+    // Use service-role client to bypass RLS for admin-generated links
+    const supabase = createServiceRoleClient();
 
     // Get the project
     const { data: project, error: projectError } = await supabase

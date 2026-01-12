@@ -212,11 +212,7 @@ export function EnhancedDashboardClient() {
       const baseUrl = window.location.origin;
       const demo_url = `${baseUrl}/demo/${sessionId}`;
 
-      // Copy to clipboard immediately while in user gesture context
-      await navigator.clipboard.writeText(demo_url);
-      alert('Demo link copied to clipboard!');
-
-      // Now save to database asynchronously (doesn't need user gesture)
+      // Save to database first so we never hand out dead links
       const response = await fetch(`/api/projects/${projectId}/demo-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -226,8 +222,13 @@ export function EnhancedDashboardClient() {
       if (!response.ok) {
         const error = await response.json();
         console.error('Failed to save demo link:', error);
-        alert(`Link copied but failed to save: ${error.error || 'Unknown error'}`);
+        alert(`Failed to save demo link: ${error.error || 'Unknown error'}`);
+        return;
       }
+
+      // Copy only after confirmed save
+      await navigator.clipboard.writeText(demo_url);
+      alert('Demo link copied to clipboard!');
     } catch (error) {
       console.error('Failed to generate link:', error);
       alert('Failed to generate demo link. Please try again.');

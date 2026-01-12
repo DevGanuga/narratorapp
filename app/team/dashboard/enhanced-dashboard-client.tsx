@@ -226,9 +226,28 @@ export function EnhancedDashboardClient() {
         return;
       }
 
-      // Copy only after confirmed save
-      await navigator.clipboard.writeText(demo_url);
-      alert('Demo link copied to clipboard!');
+      // Copy with fallback for clipboard permission issues
+      try {
+        await navigator.clipboard.writeText(demo_url);
+        alert('Demo link copied to clipboard!');
+      } catch (clipboardError) {
+        // Fallback: use older method
+        const textArea = document.createElement('textarea');
+        textArea.value = demo_url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          alert('Demo link copied to clipboard!');
+        } catch (fallbackError) {
+          // If all fails, show the link
+          prompt('Copy this demo link:', demo_url);
+        }
+        document.body.removeChild(textArea);
+      }
     } catch (error) {
       console.error('Failed to generate link:', error);
       alert('Failed to generate demo link. Please try again.');

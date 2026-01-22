@@ -91,6 +91,10 @@ export async function POST(request: NextRequest) {
       custom_greeting: project.custom_greeting || undefined,
       conversational_context: project.conversational_context || undefined,
       callback_url: webhookUrl,
+      // Pass participant name to skip Daily's name prompt
+      properties: session.prospect_name ? {
+        participant_name: session.prospect_name,
+      } : undefined,
     });
 
     // Update the session with conversation details

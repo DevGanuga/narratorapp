@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Handle conversation ended event
-    if (payload.event_type === 'conversation.ended') {
+    // Tavus sends 'system.shutdown' when conversation ends
+    if (payload.event_type === 'conversation.ended' || payload.event_type === 'system.shutdown') {
       await handleConversationEnded(payload);
     }
 

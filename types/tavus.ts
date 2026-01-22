@@ -436,8 +436,15 @@ export interface TavusApiError {
 
 export interface ConversationWebhookPayload {
   conversation_id: string;
-  status: ConversationStatus;
-  event_type: 'conversation.started' | 'conversation.ended' | 'conversation.updated';
+  status?: ConversationStatus;
+  event_type:
+    | 'conversation.started'
+    | 'conversation.ended'
+    | 'conversation.updated'
+    | 'system.replica_joined'
+    | 'system.shutdown'
+    | 'application.transcription_ready'
+    | 'application.perception_analysis';
   timestamp: string;
   data?: any;
 }

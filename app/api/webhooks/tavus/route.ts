@@ -14,10 +14,10 @@ const supabaseAdmin = createClient(
  * Tavus Webhook Handler
  *
  * Receives callbacks from Tavus when conversation events occur.
- * Primary use case: capturing transcripts when conversations end.
  *
  * Events handled:
- * - conversation.ended: Fetches transcript and updates demo session
+ * - system.shutdown: Marks session as completed
+ * - application.transcription_ready: Fetches transcript and generates intake report
  */
 export async function POST(request: NextRequest) {
   try {
@@ -30,10 +30,15 @@ export async function POST(request: NextRequest) {
       timestamp: payload.timestamp,
     });
 
-    // Handle conversation ended event
-    // Tavus sends 'system.shutdown' when conversation ends
+    // Handle conversation shutdown - mark session as completed
     if (payload.event_type === 'conversation.ended' || payload.event_type === 'system.shutdown') {
-      await handleConversationEnded(payload);
+      await handleConversationShutdown(payload);
+    }
+
+    // Handle transcription ready - fetch transcript and generate report
+    // This event fires AFTER shutdown, when transcript is actually available
+    if (payload.event_type === 'application.transcription_ready') {
+      await handleTranscriptionReady(payload);
     }
 
     return NextResponse.json({ received: true });
@@ -45,12 +50,49 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Handle conversation ended event
- * 1. Find the demo session by conversation_id
- * 2. Fetch verbose conversation data (includes transcript)
- * 3. Update demo session with transcript and completion status
+ * Handle conversation shutdown event
+ * Marks the session as completed (transcript may not be ready yet)
  */
-async function handleConversationEnded(payload: ConversationWebhookPayload) {
+async function handleConversationShutdown(payload: ConversationWebhookPayload) {
+  const { conversation_id } = payload;
+
+  // Find the demo session for this conversation
+  const { data: session, error: sessionError } = await supabaseAdmin
+    .from('demo_sessions')
+    .select('id')
+    .eq('conversation_id', conversation_id)
+    .single();
+
+  if (sessionError || !session) {
+    console.log('[Tavus Webhook] No demo session found for conversation:', conversation_id);
+    return;
+  }
+
+  // Mark session as completed
+  const { error: updateError } = await supabaseAdmin
+    .from('demo_sessions')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    })
+    .eq('id', session.id);
+
+  if (updateError) {
+    console.error('[Tavus Webhook] Failed to update demo session status:', updateError);
+    return;
+  }
+
+  console.log('[Tavus Webhook] Marked session as completed:', {
+    session_id: session.id,
+    conversation_id,
+  });
+}
+
+/**
+ * Handle transcription ready event
+ * Fetches the transcript and generates the intake report
+ */
+async function handleTranscriptionReady(payload: ConversationWebhookPayload) {
   const { conversation_id } = payload;
 
   // Find the demo session for this conversation
@@ -73,45 +115,43 @@ async function handleConversationEnded(payload: ConversationWebhookPayload) {
     verboseData = await client.getConversation(conversation_id, true);
   } catch (error) {
     console.error('[Tavus Webhook] Failed to fetch verbose conversation data:', error);
+    return;
   }
 
-  // Prepare update data
+  if (!verboseData?.transcript || verboseData.transcript.length === 0) {
+    console.log('[Tavus Webhook] No transcript in verbose data for conversation:', conversation_id);
+    return;
+  }
+
+  // Update session with transcript and analysis data
   const updateData: Record<string, unknown> = {
-    status: 'completed',
-    completed_at: new Date().toISOString(),
+    transcript: verboseData.transcript,
   };
 
-  // Add transcript and analysis if available
-  if (verboseData) {
-    if (verboseData.transcript) {
-      updateData.transcript = verboseData.transcript;
-    }
+  // Store perception analysis and shutdown info in metadata
+  const analysisData: Record<string, unknown> = {};
 
-    // Store perception analysis and shutdown info in metadata
-    const analysisData: Record<string, unknown> = {};
+  if (verboseData['application.perception_analysis']) {
+    analysisData.perception_analysis = verboseData['application.perception_analysis'];
+  }
+  if (verboseData.shutdown_reason) {
+    analysisData.shutdown_reason = verboseData.shutdown_reason;
+  }
+  if (verboseData['system.shutdown']) {
+    analysisData.system_shutdown = verboseData['system.shutdown'];
+  }
 
-    if (verboseData['application.perception_analysis']) {
-      analysisData.perception_analysis = verboseData['application.perception_analysis'];
-    }
-    if (verboseData.shutdown_reason) {
-      analysisData.shutdown_reason = verboseData.shutdown_reason;
-    }
-    if (verboseData['system.shutdown']) {
-      analysisData.system_shutdown = verboseData['system.shutdown'];
-    }
+  if (Object.keys(analysisData).length > 0) {
+    updateData.analysis_data = analysisData;
+  }
 
-    if (Object.keys(analysisData).length > 0) {
-      updateData.analysis_data = analysisData;
-    }
-
-    // Calculate duration if we have timestamps
-    if (verboseData['system.replica_joined'] && verboseData['system.shutdown']?.timestamp) {
-      const startTime = new Date(verboseData['system.replica_joined']).getTime();
-      const endTime = new Date(verboseData['system.shutdown'].timestamp).getTime();
-      const durationSeconds = Math.round((endTime - startTime) / 1000);
-      if (durationSeconds > 0) {
-        updateData.duration_seconds = durationSeconds;
-      }
+  // Calculate duration if we have timestamps
+  if (verboseData['system.replica_joined'] && verboseData['system.shutdown']?.timestamp) {
+    const startTime = new Date(verboseData['system.replica_joined']).getTime();
+    const endTime = new Date(verboseData['system.shutdown'].timestamp).getTime();
+    const durationSeconds = Math.round((endTime - startTime) / 1000);
+    if (durationSeconds > 0) {
+      updateData.duration_seconds = durationSeconds;
     }
   }
 
@@ -122,50 +162,46 @@ async function handleConversationEnded(payload: ConversationWebhookPayload) {
     .eq('id', session.id);
 
   if (updateError) {
-    console.error('[Tavus Webhook] Failed to update demo session:', updateError);
+    console.error('[Tavus Webhook] Failed to update demo session with transcript:', updateError);
     return;
   }
 
-  console.log('[Tavus Webhook] Successfully processed conversation end:', {
+  console.log('[Tavus Webhook] Saved transcript:', {
     session_id: session.id,
     conversation_id,
-    has_transcript: !!verboseData?.transcript,
-    transcript_length: verboseData?.transcript?.length || 0,
+    transcript_length: verboseData.transcript.length,
   });
 
-  // Trigger intake report generation if we have a transcript and a report recipient
-  if (verboseData?.transcript && verboseData.transcript.length > 0) {
-    // Use report_recipient from session (set via intake form) or fall back to project config
-    const doctorEmail = session.report_recipient;
+  // Generate intake report if we have a report recipient
+  const doctorEmail = session.report_recipient;
 
-    if (doctorEmail) {
-      console.log('[Tavus Webhook] Triggering intake report generation:', {
-        sessionId: session.id,
-        projectId: session.project_id,
+  if (doctorEmail) {
+    console.log('[Tavus Webhook] Triggering intake report generation:', {
+      sessionId: session.id,
+      projectId: session.project_id,
+      doctorEmail,
+      patientName: session.prospect_name,
+    });
+
+    try {
+      const result = await generateIntakeReport(session.id, {
         doctorEmail,
-        patientName: session.prospect_name,
+        sendEmail: true,
       });
 
-      try {
-        const result = await generateIntakeReport(session.id, {
-          doctorEmail,
-          sendEmail: true,
-        });
-
-        console.log('[Tavus Webhook] Intake report result:', {
-          success: result.success,
-          pdfGenerated: result.pdfGenerated,
-          emailSent: result.emailSent,
-          patientName: result.analysis?.patientName,
-          urgencyLevel: result.analysis?.urgencyLevel,
-          error: result.error,
-        });
-      } catch (error) {
-        console.error('[Tavus Webhook] Error generating intake report:', error);
-      }
-    } else {
-      console.log('[Tavus Webhook] No report_recipient set for session:', session.id);
+      console.log('[Tavus Webhook] Intake report result:', {
+        success: result.success,
+        pdfGenerated: result.pdfGenerated,
+        emailSent: result.emailSent,
+        patientName: result.analysis?.patientName,
+        urgencyLevel: result.analysis?.urgencyLevel,
+        error: result.error,
+      });
+    } catch (error) {
+      console.error('[Tavus Webhook] Error generating intake report:', error);
     }
+  } else {
+    console.log('[Tavus Webhook] No report_recipient set for session:', session.id);
   }
 }
 

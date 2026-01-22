@@ -19,7 +19,9 @@ function requiresIntakeForm(project: Project): boolean {
 
 export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) {
   const [conversationUrl, setConversationUrl] = useState<string | null>(session.conversation_url);
-  const [loading, setLoading] = useState(!session.conversation_url);
+  // Don't show loading if intake form needs to be shown first
+  const needsIntakeForm = requiresIntakeForm(project);
+  const [loading, setLoading] = useState(!session.conversation_url && !needsIntakeForm);
   const [error, setError] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -79,10 +81,11 @@ export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) 
   };
 
   useEffect(() => {
-    if (!session.conversation_url) {
+    // Don't create conversation until intake form is submitted (if required)
+    if (!session.conversation_url && !showIntakeForm) {
       createConversation();
     }
-  }, []);
+  }, [showIntakeForm]);
 
   const createConversation = async () => {
     try {

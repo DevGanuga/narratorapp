@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify session exists and is pending
+    // Verify session exists
     const { data: session, error: fetchError } = await supabaseAdmin
       .from('demo_sessions')
       .select('id, status')
@@ -37,9 +37,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (session.status !== 'pending') {
+    // Allow saving intake data for pending or active sessions
+    // (in case form is submitted slightly after conversation starts)
+    if (session.status === 'completed' || session.status === 'expired') {
       return NextResponse.json(
-        { error: 'Session has already started' },
+        { error: 'Session has already ended' },
         { status: 400 }
       );
     }

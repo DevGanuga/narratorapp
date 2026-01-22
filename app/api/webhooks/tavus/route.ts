@@ -107,9 +107,9 @@ async function handleTranscriptionReady(payload: ConversationWebhookPayload) {
     return;
   }
 
-  // Fetch verbose conversation data (includes transcript)
+  // Fetch verbose conversation data (includes transcript in events array)
   const client = createTavusClient();
-  let verboseData: VerboseConversationDetails | null = null;
+  let verboseData: any = null;
 
   try {
     verboseData = await client.getConversation(conversation_id, true);
@@ -118,27 +118,41 @@ async function handleTranscriptionReady(payload: ConversationWebhookPayload) {
     return;
   }
 
-  if (!verboseData?.transcript || verboseData.transcript.length === 0) {
+  // Extract transcript from events array - Tavus returns it in events[].properties.transcript
+  const transcriptEvent = verboseData?.events?.find(
+    (e: any) => e.event_type === 'application.transcription_ready'
+  );
+  const transcript = transcriptEvent?.properties?.transcript;
+
+  if (!transcript || transcript.length === 0) {
     console.log('[Tavus Webhook] No transcript in verbose data for conversation:', conversation_id);
     return;
   }
 
   // Update session with transcript and analysis data
   const updateData: Record<string, unknown> = {
-    transcript: verboseData.transcript,
+    transcript: transcript,
   };
+
+  // Extract other data from events array
+  const perceptionEvent = verboseData?.events?.find(
+    (e: any) => e.event_type === 'application.perception_analysis'
+  );
+  const shutdownEvent = verboseData?.events?.find(
+    (e: any) => e.event_type === 'system.shutdown'
+  );
+  const replicaJoinedEvent = verboseData?.events?.find(
+    (e: any) => e.event_type === 'system.replica_joined'
+  );
 
   // Store perception analysis and shutdown info in metadata
   const analysisData: Record<string, unknown> = {};
 
-  if (verboseData['application.perception_analysis']) {
-    analysisData.perception_analysis = verboseData['application.perception_analysis'];
+  if (perceptionEvent?.properties?.analysis) {
+    analysisData.perception_analysis = perceptionEvent.properties.analysis;
   }
-  if (verboseData.shutdown_reason) {
-    analysisData.shutdown_reason = verboseData.shutdown_reason;
-  }
-  if (verboseData['system.shutdown']) {
-    analysisData.system_shutdown = verboseData['system.shutdown'];
+  if (shutdownEvent?.properties?.shutdown_reason) {
+    analysisData.shutdown_reason = shutdownEvent.properties.shutdown_reason;
   }
 
   if (Object.keys(analysisData).length > 0) {
@@ -146,9 +160,9 @@ async function handleTranscriptionReady(payload: ConversationWebhookPayload) {
   }
 
   // Calculate duration if we have timestamps
-  if (verboseData['system.replica_joined'] && verboseData['system.shutdown']?.timestamp) {
-    const startTime = new Date(verboseData['system.replica_joined']).getTime();
-    const endTime = new Date(verboseData['system.shutdown'].timestamp).getTime();
+  if (replicaJoinedEvent?.timestamp && shutdownEvent?.timestamp) {
+    const startTime = new Date(replicaJoinedEvent.timestamp).getTime();
+    const endTime = new Date(shutdownEvent.timestamp).getTime();
     const durationSeconds = Math.round((endTime - startTime) / 1000);
     if (durationSeconds > 0) {
       updateData.duration_seconds = durationSeconds;
@@ -169,7 +183,7 @@ async function handleTranscriptionReady(payload: ConversationWebhookPayload) {
   console.log('[Tavus Webhook] Saved transcript:', {
     session_id: session.id,
     conversation_id,
-    transcript_length: verboseData.transcript.length,
+    transcript_length: transcript.length,
   });
 
   // Generate intake report if we have a report recipient

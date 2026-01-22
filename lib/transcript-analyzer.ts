@@ -22,7 +22,7 @@ function getAnthropicClient(): Anthropic {
 
 export interface TranscriptMessage {
   role: 'user' | 'assistant' | 'system';
-  message: string;
+  content: string;  // Tavus API returns 'content'
   timestamp?: string;
 }
 
@@ -78,7 +78,7 @@ export async function analyzeTranscript(
     .map((msg) => {
       const role = msg.role === 'user' ? 'PATIENT' : 'FLO (AI Nurse)';
       const time = msg.timestamp ? ` [${msg.timestamp}]` : '';
-      return `${role}${time}: ${msg.message}`;
+      return `${role}${time}: ${msg.content}`;
     })
     .join('\n\n');
 
@@ -160,7 +160,7 @@ export function extractPatientName(transcript: TranscriptMessage[]): string {
   for (const msg of transcript) {
     if (msg.role === 'user') {
       for (const pattern of patterns) {
-        const match = msg.message.match(pattern);
+        const match = msg.content?.match(pattern);
         if (match) {
           return match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
         }

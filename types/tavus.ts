@@ -61,8 +61,8 @@ export interface VerboseConversationDetails extends ConversationDetails {
 
 export interface ConversationTranscript {
   role: 'user' | 'assistant' | 'system';
-  message: string;
-  timestamp: string;
+  content: string;  // Tavus API returns 'content', not 'message'
+  timestamp?: string;
 }
 
 export interface PerceptionAnalysis {

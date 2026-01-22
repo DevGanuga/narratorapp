@@ -367,7 +367,7 @@ function IntakeReportDocument({
               <Text style={styles.messageRole}>
                 {message.role === 'user' ? 'PATIENT' : 'FLO (AI)'}
               </Text>
-              <Text style={styles.messageText}>{message.message}</Text>
+              <Text style={styles.messageText}>{message.content}</Text>
               {message.timestamp && (
                 <Text style={styles.timestamp}>{message.timestamp}</Text>
               )}

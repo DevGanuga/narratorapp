@@ -54,7 +54,7 @@ See `SETUP.md` for complete Supabase setup instructions including schema creatio
 **Database Layer**:
 - Supabase PostgreSQL with schema in `supabase/schema.sql`
 - Type-safe database types in `types/database.ts`
-- Three main tables: `projects`, `demo_sessions`, `profiles`
+- Three main tables: `projects`, `demo_sessions`, `team_members`
 - Supabase helpers: `lib/supabase/{client,server,middleware}.ts`
 
 **Project → Demo Session Flow**:
@@ -110,7 +110,7 @@ See `SETUP.md` for complete Supabase setup instructions including schema creatio
 ### Supabase Patterns
 - Row Level Security (RLS) enabled on all tables
 - Use `createClient()` from appropriate context (client/server/middleware)
-- Database types are code-generated - see comment in `types/database.ts` for regeneration command
+- Regenerate database types: `npx supabase gen types typescript`
 - Auth session managed via middleware on every request
 
 ### Type Safety
@@ -179,12 +179,15 @@ const { data, error } = await supabase
 ## Documentation References
 
 - **Tavus API**: `docs/tavus-api-reference.md` - Complete API documentation
-- **Project Summary**: `PROJECT_SUMMARY.md` - High-level project overview
+- **Quick Start**: `QUICK_SETUP.md` - Fast environment setup guide
 - **Setup Guide**: `SETUP.md` - Environment and Supabase setup
 - **Demo Workflow**: `DEMO_WORKFLOW.md` - Complete demo creation workflow
+- **Demo Projects**: `DEMO_PROJECTS_SETUP.md` - Project configuration for demos
 - **Testing Checklist**: `TESTING_CHECKLIST.md` - Manual testing procedures
 - **Admin Setup**: `ADMIN_SETUP.md` and `ADMIN_REFINEMENTS.md` - Dashboard configuration
 - **Integration Guide**: `INTEGRATION_COMPLETE.md` - Supabase + Tavus integration details
+- **Project Summary**: `PROJECT_SUMMARY.md` - High-level project overview
+- **Deployment**: `DEPLOYMENT.md` - Production deployment guide
 
 ## Key Files to Understand
 

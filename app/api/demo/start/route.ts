@@ -3,6 +3,23 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createTavusClient } from '@/lib/tavus-client';
 
+/**
+ * Get the base URL for webhook callbacks
+ * Handles both Vercel deployments and local development
+ */
+function getWebhookBaseUrl(): string {
+  // Explicit app URL takes priority (for production custom domains)
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  // Vercel deployment URL (auto-provided in Vercel)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  // Local development fallback
+  return 'http://localhost:3000';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { session_id } = await request.json();
@@ -63,15 +80,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Project not available' }, { status: 404 });
     }
 
-    // Create the Tavus conversation
+    // Create the Tavus conversation with webhook callback
     const client = createTavusClient();
-    
+    const webhookUrl = `${getWebhookBaseUrl()}/api/webhooks/tavus`;
+
     const conversation = await client.createConversation({
       replica_id: project.replica_id,
       persona_id: project.persona_id,
       conversation_name: `${project.name} - Demo ${session.id}`,
       custom_greeting: project.custom_greeting || undefined,
       conversational_context: project.conversational_context || undefined,
+      callback_url: webhookUrl,
     });
 
     // Update the session with conversation details

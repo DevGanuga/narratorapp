@@ -127,6 +127,11 @@ export interface Database {
           prospect_company: string | null;
           referrer: string | null;
           metadata: Json;
+          // Transcript and analysis fields (for intake reports)
+          transcript: Json | null;
+          analysis_data: Json | null;
+          report_sent_at: string | null;
+          report_recipient: string | null;
         };
         Insert: {
           id?: string;
@@ -143,6 +148,10 @@ export interface Database {
           prospect_company?: string | null;
           referrer?: string | null;
           metadata?: Json;
+          transcript?: Json | null;
+          analysis_data?: Json | null;
+          report_sent_at?: string | null;
+          report_recipient?: string | null;
         };
         Update: {
           id?: string;
@@ -159,6 +168,10 @@ export interface Database {
           prospect_company?: string | null;
           referrer?: string | null;
           metadata?: Json;
+          transcript?: Json | null;
+          analysis_data?: Json | null;
+          report_sent_at?: string | null;
+          report_recipient?: string | null;
         };
       };
       team_members: {

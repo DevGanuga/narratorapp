@@ -16,7 +16,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@radix-ui/react-slot": "^1.2.4",
+    "@react-pdf/renderer": "^4.3.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
     "class-variance-authority": "^0.7.1",
@@ -25,6 +27,7 @@
     "next": "^16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "resend": "^6.8.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

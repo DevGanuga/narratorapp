@@ -9,6 +9,14 @@ interface BrandedDemoViewerProps {
   project: Project;
 }
 
+// Check if this project requires intake form (has intake_form_enabled in branding or is Flo-type)
+function requiresIntakeForm(project: Project): boolean {
+  const branding = project.branding as Record<string, unknown> | null;
+  return branding?.intake_form_enabled === true ||
+         project.name?.toLowerCase().includes('flo') ||
+         project.name?.toLowerCase().includes('intake');
+}
+
 export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) {
   const [conversationUrl, setConversationUrl] = useState<string | null>(session.conversation_url);
   const [loading, setLoading] = useState(!session.conversation_url);
@@ -18,9 +26,57 @@ export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) 
   const [showAboutModal, setShowAboutModal] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Intake form state
+  const [showIntakeForm, setShowIntakeForm] = useState(requiresIntakeForm(project));
+  const [intakeData, setIntakeData] = useState({
+    patientName: '',
+    doctorEmail: '',
+  });
+  const [intakeSubmitting, setIntakeSubmitting] = useState(false);
+  const [intakeError, setIntakeError] = useState<string | null>(null);
+
   const bgColor = project.brand_background_color || '#0a0a0a';
   const textColor = project.brand_primary_color || '#ffffff';
   const accentColor = '#f59e0b';
+
+  // Handle intake form submission
+  const handleIntakeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!intakeData.patientName.trim()) {
+      setIntakeError('Please enter your name');
+      return;
+    }
+    if (!intakeData.doctorEmail.trim() || !intakeData.doctorEmail.includes('@')) {
+      setIntakeError('Please enter a valid doctor email');
+      return;
+    }
+
+    setIntakeSubmitting(true);
+    setIntakeError(null);
+
+    try {
+      const response = await fetch('/api/demo/intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: session.id,
+          prospect_name: intakeData.patientName.trim(),
+          report_recipient: intakeData.doctorEmail.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save intake information');
+      }
+
+      setShowIntakeForm(false);
+    } catch {
+      setIntakeError('Unable to save information. Please try again.');
+    } finally {
+      setIntakeSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (!session.conversation_url) {
@@ -87,7 +143,7 @@ export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) 
   // Error State
   if (error) {
     return (
-      <div 
+      <div
         className="fixed inset-0 flex items-center justify-center p-6"
         style={{ backgroundColor: bgColor, color: textColor }}
       >
@@ -105,6 +161,101 @@ export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) 
           >
             Try Again
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Intake Form (for Flo and intake-enabled projects)
+  if (showIntakeForm) {
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center p-6"
+        style={{ backgroundColor: bgColor, color: textColor }}
+      >
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div
+              className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: `${accentColor}20` }}
+            >
+              <svg className="w-8 h-8" style={{ color: accentColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-light mb-2">Before We Begin</h1>
+            <p className="text-sm opacity-50">Please provide the following information</p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleIntakeSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium mb-2 opacity-70">Your Name</label>
+              <input
+                type="text"
+                value={intakeData.patientName}
+                onChange={(e) => setIntakeData({ ...intakeData, patientName: e.target.value })}
+                placeholder="Enter your full name"
+                className="w-full px-4 py-3 rounded-xl text-base outline-none transition-all"
+                style={{
+                  backgroundColor: `${textColor}08`,
+                  border: `1px solid ${textColor}15`,
+                  color: textColor,
+                }}
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 opacity-70">Doctor&apos;s Email</label>
+              <input
+                type="email"
+                value={intakeData.doctorEmail}
+                onChange={(e) => setIntakeData({ ...intakeData, doctorEmail: e.target.value })}
+                placeholder="doctor@clinic.com"
+                className="w-full px-4 py-3 rounded-xl text-base outline-none transition-all"
+                style={{
+                  backgroundColor: `${textColor}08`,
+                  border: `1px solid ${textColor}15`,
+                  color: textColor,
+                }}
+              />
+              <p className="text-xs opacity-40 mt-2">
+                Your intake summary will be sent to this email after the call
+              </p>
+            </div>
+
+            {intakeError && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <p className="text-sm text-red-400">{intakeError}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={intakeSubmitting}
+              className="w-full py-4 rounded-xl text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: textColor, color: bgColor }}
+            >
+              {intakeSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Saving...
+                </span>
+              ) : (
+                'Continue'
+              )}
+            </button>
+          </form>
+
+          {/* Privacy note */}
+          <p className="text-center text-xs opacity-30 mt-6">
+            Your information is handled securely and only used for this intake session.
+          </p>
         </div>
       </div>
     );

@@ -65,6 +65,10 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
     prospect_company: null,
     referrer: null,
     metadata: {},
+    transcript: null,
+    analysis_data: null,
+    report_sent_at: null,
+    report_recipient: null,
   };
 
   return <BrandedDemoViewer session={mockSession} project={project} />;

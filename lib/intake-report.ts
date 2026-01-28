@@ -106,6 +106,7 @@ export async function generateIntakeReport(
         });
 
     const projectData = session.projects as { name?: string; persona_name?: string } | null;
+    const analysisData = session.analysis_data as { perception_analysis?: string } | null;
 
     const pdfBuffer = await generateIntakeReportPDF({
       analysis,
@@ -115,6 +116,7 @@ export async function generateIntakeReport(
       projectName: projectData?.name || 'AI Intake',
       sessionId: session.id,
       duration: session.duration_seconds || undefined,
+      perceptionAnalysis: analysisData?.perception_analysis,
     });
 
     console.log('[Intake Report] PDF generated, size:', pdfBuffer.length, 'bytes');

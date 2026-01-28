@@ -167,6 +167,7 @@ interface IntakeReportProps {
   projectName?: string;
   sessionId: string;
   duration?: number;
+  perceptionAnalysis?: string;
 }
 
 // Helper to format duration
@@ -197,6 +198,7 @@ function IntakeReportDocument({
   projectName,
   sessionId,
   duration,
+  perceptionAnalysis,
 }: IntakeReportProps) {
   return (
     <Document>
@@ -291,6 +293,14 @@ function IntakeReportDocument({
                 <Text style={styles.value}>{allergy}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* Visual Observations / Perception Analysis */}
+        {perceptionAnalysis && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Visual Observations</Text>
+            <Text style={styles.summary}>{perceptionAnalysis}</Text>
           </View>
         )}
 

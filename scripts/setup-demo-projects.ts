@@ -1,9 +1,15 @@
 /**
- * Setup Script: Pre-configure 5 Demo Projects
+ * Setup Script: Pre-configure Demo Projects
  *
- * This script creates the 5 demo projects via the API
+ * This script creates demo projects directly in Supabase
  * Run with: npx tsx scripts/setup-demo-projects.ts
  */
+
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
 
 const DEMO_PROJECTS = [
   {
@@ -106,41 +112,166 @@ const DEMO_PROJECTS = [
     session_duration_hours: 24,
     show_narrator_branding: true,
   },
+  {
+    name: 'SHAKESPEARE Demo',
+    description: 'Interactive demo with William Shakespeare AI replica - Created June 2, 2025',
+    partner: 'Narrator Studio',
+    persona_id: 'pad4c7f239ca', // Shakey1
+    replica_id: 'r297e831b6ca', // Ari Palitz June 02 2025
+    custom_greeting: "Hark! Welcome, good friend. What wouldst thou discuss with the Bard this fine day?",
+    conversational_context: 'You are William Shakespeare, the legendary English playwright and poet. Speak in eloquent, period-appropriate language while remaining engaging and accessible. Share wisdom about life, love, drama, and the human condition.',
+    brand_name: 'Narrator',
+    brand_logo_url: '/White logo - no background.png',
+    brand_primary_color: '#ffffff',
+    brand_background_color: '#0a0a0a',
+    welcome_title: 'Converse with the Bard',
+    welcome_message: 'An audience with William Shakespeare',
+    instructions: 'Click "Start Demo" to begin your interactive experience. Make sure your camera and microphone are enabled.',
+    cta_text: 'Learn More',
+    cta_url: 'https://narrator.studio',
+    session_duration_hours: 24,
+    show_narrator_branding: true,
+  },
+  {
+    name: 'FD Demo',
+    description: 'Interactive demo with FD AI replica - Created February 27, 2026',
+    partner: 'Narrator Studio',
+    persona_id: 'p48e24928e56', // FD1
+    replica_id: 'r86e83954590', // Ari Palitz February 27 2026
+    custom_greeting: "Hello! I'm excited to chat with you today.",
+    conversational_context: 'You are a friendly and professional AI replica demonstrating conversational capabilities.',
+    brand_name: 'Narrator',
+    brand_logo_url: '/White logo - no background.png',
+    brand_primary_color: '#ffffff',
+    brand_background_color: '#0a0a0a',
+    welcome_title: 'Experience FD AI',
+    welcome_message: 'Interactive conversation with FD',
+    instructions: 'Click "Start Demo" to begin your interactive experience. Make sure your camera and microphone are enabled.',
+    cta_text: 'Learn More',
+    cta_url: 'https://narrator.studio',
+    session_duration_hours: 24,
+    show_narrator_branding: true,
+  },
+  {
+    name: 'CASSIE ALT1 Demo',
+    description: 'Interactive demo with CASSIE ALT1 AI replica - Created May 5, 2025',
+    partner: 'Narrator Studio',
+    persona_id: 'p26c91fbebfe', // CASSIE ALT1
+    replica_id: 'r717b11e567e', // CASSIE ALT1
+    custom_greeting: "Hi there! Great to meet you. What would you like to talk about?",
+    conversational_context: 'You are CASSIE, a warm and engaging AI replica ready to have a natural conversation.',
+    brand_name: 'Narrator',
+    brand_logo_url: '/White logo - no background.png',
+    brand_primary_color: '#ffffff',
+    brand_background_color: '#0a0a0a',
+    welcome_title: 'Meet CASSIE',
+    welcome_message: 'Interactive conversation with CASSIE',
+    instructions: 'Click "Start Demo" to begin your interactive experience. Make sure your camera and microphone are enabled.',
+    cta_text: 'Learn More',
+    cta_url: 'https://narrator.studio',
+    session_duration_hours: 24,
+    show_narrator_branding: true,
+  },
+  {
+    name: 'MAT 1 Demo',
+    description: 'Interactive demo with Mat 1 AI replica - Created March 1, 2026',
+    partner: 'Narrator Studio',
+    persona_id: 'pd63498bb155', // Mat 1
+    replica_id: 'rd8880f24978', // Ari Palitz March 01 2026
+    custom_greeting: "Hey! Thanks for joining. What's on your mind?",
+    conversational_context: 'You are a personable and helpful AI replica showcasing advanced conversational AI technology.',
+    brand_name: 'Narrator',
+    brand_logo_url: '/White logo - no background.png',
+    brand_primary_color: '#ffffff',
+    brand_background_color: '#0a0a0a',
+    welcome_title: 'Experience MAT AI',
+    welcome_message: 'Interactive conversation with MAT',
+    instructions: 'Click "Start Demo" to begin your interactive experience. Make sure your camera and microphone are enabled.',
+    cta_text: 'Learn More',
+    cta_url: 'https://narrator.studio',
+    session_duration_hours: 24,
+    show_narrator_branding: true,
+  },
 ];
 
 async function setupProjects() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  console.log('🚀 Setting up 5 demo projects...\n');
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('❌ Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
+    process.exit(1);
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  console.log(`🚀 Setting up ${DEMO_PROJECTS.length} demo projects...\n`);
 
   for (const project of DEMO_PROJECTS) {
     try {
       console.log(`Creating: ${project.name}...`);
 
-      const response = await fetch(`${baseUrl}/api/projects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Note: You'll need to add authentication headers if required
-        },
-        body: JSON.stringify(project),
-      });
+      // Check if project with same name already exists
+      const { data: existing } = await supabase
+        .from('projects')
+        .select('id, user_id')
+        .eq('name', project.name)
+        .single();
 
-      if (response.ok) {
-        const data = await response.json();
+      if (existing) {
+        console.log(`⏭️  ${project.name} already exists (ID: ${existing.id}), skipping...\n`);
+        continue;
+      }
+
+      // Get user_id from an existing project for consistency
+      const { data: existingProject } = await supabase
+        .from('projects')
+        .select('user_id')
+        .limit(1)
+        .single();
+      
+      const userId = existingProject?.user_id;
+
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          name: project.name,
+          description: project.description,
+          partner: project.partner,
+          persona_id: project.persona_id,
+          replica_id: project.replica_id,
+          custom_greeting: project.custom_greeting,
+          conversational_context: project.conversational_context,
+          brand_name: project.brand_name,
+          brand_logo_url: project.brand_logo_url,
+          brand_primary_color: project.brand_primary_color,
+          brand_background_color: project.brand_background_color,
+          welcome_title: project.welcome_title,
+          welcome_message: project.welcome_message,
+          instructions: project.instructions,
+          cta_text: project.cta_text,
+          cta_url: project.cta_url,
+          session_duration_hours: project.session_duration_hours,
+          show_narrator_branding: project.show_narrator_branding,
+          status: 'active',
+          user_id: userId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`❌ Failed to create ${project.name}: ${error.message}\n`);
+      } else {
         console.log(`✅ Created ${project.name} (ID: ${data.id})`);
         console.log(`   Persona: ${project.persona_id}`);
         console.log(`   Replica: ${project.replica_id}\n`);
-      } else {
-        const error = await response.text();
-        console.error(`❌ Failed to create ${project.name}: ${error}\n`);
       }
     } catch (error) {
       console.error(`❌ Error creating ${project.name}:`, error, '\n');
     }
   }
 
-  console.log('✅ Setup complete! Go to /team/dashboard to activate and generate demo links.');
+  console.log('✅ Setup complete! Go to /team/dashboard to manage demo links.');
 }
 
 // Run if called directly

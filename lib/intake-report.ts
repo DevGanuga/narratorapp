@@ -8,16 +8,13 @@ import { analyzeTranscript, extractPatientName, type TranscriptMessage } from '.
 import { generateIntakeReportPDF } from './pdf-generator';
 import { sendIntakeReportEmail } from './email-service';
 
-// Use service role client for admin operations
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export interface IntakeReportConfig {
-  /** Email address to send the report to */
   doctorEmail: string;
-  /** Whether to send the email (can be disabled for testing) */
   sendEmail?: boolean;
 }
 
@@ -28,13 +25,13 @@ export interface IntakeReportResult {
   error?: string;
   analysis?: {
     patientName: string;
-    urgencyLevel: string;
     chiefComplaint: string;
   };
 }
 
 /**
- * Generate and send an intake report for a completed demo session
+ * Generate and send an intake report for a completed demo session.
+ * Includes deduplication — skips if report_sent_at is already set.
  */
 export async function generateIntakeReport(
   sessionId: string,
@@ -43,15 +40,31 @@ export async function generateIntakeReport(
   console.log('[Intake Report] Starting report generation for session:', sessionId);
 
   try {
-    // 1. Fetch the session with transcript
+    // Dedup: skip if report already sent
+    const { data: existing } = await supabaseAdmin
+      .from('demo_sessions')
+      .select('report_sent_at')
+      .eq('id', sessionId)
+      .single();
+
+    if (existing?.report_sent_at) {
+      console.log('[Intake Report] Report already sent, skipping:', sessionId);
+      return {
+        success: true,
+        pdfGenerated: false,
+        emailSent: false,
+        error: 'Report already sent',
+      };
+    }
+
+    // Fetch session with transcript
     const { data: session, error: sessionError } = await supabaseAdmin
       .from('demo_sessions')
       .select(`
         id,
         transcript,
-        analysis_data,
-        duration_seconds,
         completed_at,
+        created_at,
         project_id,
         prospect_name,
         projects (
@@ -80,59 +93,46 @@ export async function generateIntakeReport(
       };
     }
 
-    // Cast transcript to proper type
     const transcript = session.transcript as unknown as TranscriptMessage[];
 
-    // 2. Analyze the transcript
+    // Analyze transcript with Claude
     console.log('[Intake Report] Analyzing transcript...');
     const analysis = await analyzeTranscript(transcript);
 
-    // Use prospect name if available, otherwise extract from transcript
-    const patientName = session.prospect_name || analysis.patientName || extractPatientName(transcript);
-    analysis.patientName = patientName;
-
-    // 3. Generate PDF
-    console.log('[Intake Report] Generating PDF...');
-    const reportDate = session.completed_at
-      ? new Date(session.completed_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
-      : new Date().toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
+    // Use prospect name if available, otherwise fall back to analysis or extraction
+    if (session.prospect_name) {
+      analysis.patientName = session.prospect_name;
+    } else if (analysis.patientName === 'Unknown') {
+      analysis.patientName = extractPatientName(transcript);
+    }
 
     const projectData = session.projects as { name?: string; persona_name?: string } | null;
-    const analysisData = session.analysis_data as { perception_analysis?: string } | null;
+    const replicaName = projectData?.persona_name || projectData?.name || 'AI Intake';
+    const interviewTimestamp = session.completed_at || session.created_at || new Date().toISOString();
 
+    // Generate PDF
+    console.log('[Intake Report] Generating PDF...');
     const pdfBuffer = await generateIntakeReportPDF({
       analysis,
-      transcript,
-      patientName,
-      reportDate,
-      projectName: projectData?.name || 'AI Intake',
-      sessionId: session.id,
-      duration: session.duration_seconds || undefined,
-      perceptionAnalysis: analysisData?.perception_analysis,
+      replicaName,
+      interviewTimestamp,
     });
-
     console.log('[Intake Report] PDF generated, size:', pdfBuffer.length, 'bytes');
 
-    // 4. Send email (if enabled)
+    // Send email
     let emailSent = false;
     if (config.sendEmail !== false && config.doctorEmail) {
       console.log('[Intake Report] Sending email to:', config.doctorEmail);
 
+      const reportDate = new Date(interviewTimestamp).toLocaleDateString('en-US');
+
       const emailResult = await sendIntakeReportEmail({
         doctorEmail: config.doctorEmail,
-        patientName,
+        patientName: analysis.patientName,
         reportDate,
-        summary: analysis.summary,
+        chiefComplaint: analysis.chiefComplaint,
         pdfBuffer,
-        projectName: projectData?.name,
+        replicaName,
       });
 
       emailSent = emailResult.success;
@@ -142,19 +142,18 @@ export async function generateIntakeReport(
       }
     }
 
-    // 5. Update session with report status
+    // Update session with report status
     await supabaseAdmin
       .from('demo_sessions')
       .update({
         report_sent_at: emailSent ? new Date().toISOString() : null,
         report_recipient: emailSent ? config.doctorEmail : null,
         analysis_data: {
-          ...(session.analysis_data as object || {}),
           intake_analysis: {
             patientName: analysis.patientName,
             chiefComplaint: analysis.chiefComplaint,
-            urgencyLevel: analysis.urgencyLevel,
-            symptomsCount: analysis.symptoms.length,
+            age: analysis.age,
+            gender: analysis.gender,
             analyzedAt: new Date().toISOString(),
           },
         },
@@ -169,7 +168,6 @@ export async function generateIntakeReport(
       emailSent,
       analysis: {
         patientName: analysis.patientName,
-        urgencyLevel: analysis.urgencyLevel,
         chiefComplaint: analysis.chiefComplaint,
       },
     };
@@ -182,35 +180,4 @@ export async function generateIntakeReport(
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
-}
-
-/**
- * Check if a project is configured for intake reports
- * (Can be extended to check project settings in the future)
- */
-export async function isIntakeReportEnabled(projectId: string): Promise<{
-  enabled: boolean;
-  doctorEmail?: string;
-}> {
-  // For now, check if project has custom_fields with doctor email
-  const { data: project } = await supabaseAdmin
-    .from('projects')
-    .select('custom_fields, name')
-    .eq('id', projectId)
-    .single();
-
-  if (!project) {
-    return { enabled: false };
-  }
-
-  // Check for doctor_email in custom_fields or branding
-  const customFields = project.custom_fields as Record<string, unknown> | null;
-  const doctorEmail = customFields?.doctor_email as string | undefined;
-
-  // Enable if we have a doctor email configured
-  if (doctorEmail) {
-    return { enabled: true, doctorEmail };
-  }
-
-  return { enabled: false };
 }

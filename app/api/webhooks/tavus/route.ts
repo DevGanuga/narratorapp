@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createTavusClient } from '@/lib/tavus-client';
 import { generateIntakeReport } from '@/lib/intake-report';
-import type { ConversationWebhookPayload, VerboseConversationDetails } from '@/types/tavus';
+import type { ConversationWebhookPayload } from '@/types/tavus';
 
 // Use service role client for webhook operations (no user context)
 const supabaseAdmin = createClient(
@@ -186,10 +186,23 @@ async function handleTranscriptionReady(payload: ConversationWebhookPayload) {
     transcript_length: transcript.length,
   });
 
-  // Generate intake report if we have a report recipient
+  // Generate intake report if we have a report recipient (with dedup check)
   const doctorEmail = session.report_recipient;
 
   if (doctorEmail) {
+    // Re-check report_sent_at to avoid duplicate generation
+    // (client-side trigger may have already handled this)
+    const { data: freshSession } = await supabaseAdmin
+      .from('demo_sessions')
+      .select('report_sent_at')
+      .eq('id', session.id)
+      .single();
+
+    if (freshSession?.report_sent_at) {
+      console.log('[Tavus Webhook] Report already sent by client trigger, skipping:', session.id);
+      return;
+    }
+
     console.log('[Tavus Webhook] Triggering intake report generation:', {
       sessionId: session.id,
       projectId: session.project_id,
@@ -208,7 +221,6 @@ async function handleTranscriptionReady(payload: ConversationWebhookPayload) {
         pdfGenerated: result.pdfGenerated,
         emailSent: result.emailSent,
         patientName: result.analysis?.patientName,
-        urgencyLevel: result.analysis?.urgencyLevel,
         error: result.error,
       });
     } catch (error) {

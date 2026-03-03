@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import type { Project, DemoSession } from '@/types/database';
 
@@ -27,6 +27,11 @@ export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Call-end and report state
+  const [callEnded, setCallEnded] = useState(false);
+  const [reportStatus, setReportStatus] = useState<'idle' | 'processing' | 'sent' | 'failed'>('idle');
+  const reportTriggeredRef = useRef(false);
 
   // Intake form state
   const [showIntakeForm, setShowIntakeForm] = useState(requiresIntakeForm(project));
@@ -112,6 +117,76 @@ export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) 
     setIsTransitioning(true);
     setTimeout(() => setShowWelcome(false), 300);
   };
+
+  // Trigger report generation after call ends
+  const triggerReportGeneration = useCallback(async () => {
+    if (reportTriggeredRef.current) return;
+    reportTriggeredRef.current = true;
+    setReportStatus('processing');
+
+    // Give Tavus time to process and finalize the transcript
+    await new Promise((r) => setTimeout(r, 15000));
+
+    try {
+      const res = await fetch('/api/demo/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: session.id }),
+      });
+      const data = await res.json();
+      setReportStatus(data.emailSent ? 'sent' : data.success ? 'sent' : 'failed');
+    } catch {
+      console.error('[Demo] Failed to trigger report generation');
+      setReportStatus('failed');
+    }
+  }, [session.id]);
+
+  // Listen for Tavus iframe events signaling the call has ended
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (!iframeRef.current || event.source !== iframeRef.current.contentWindow) return;
+
+      let data = event.data;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch { return; }
+      }
+      if (!data || typeof data !== 'object') return;
+
+      const isEnded =
+        data.action === 'left-meeting' ||
+        data.type === 'conversation.ended' ||
+        data.event_type === 'conversation.ended' ||
+        data.event_type === 'system.shutdown' ||
+        data.event === 'conversation_ended' ||
+        data.callState === 'ended' ||
+        data.app_message?.event_type === 'conversation.ended';
+
+      if (isEnded && !callEnded) {
+        setCallEnded(true);
+        triggerReportGeneration();
+      }
+    }
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [callEnded, triggerReportGeneration]);
+
+  // Backup: fire on page unload in case iframe events didn't trigger
+  useEffect(() => {
+    function handlePageHide() {
+      if (reportTriggeredRef.current || !conversationUrl) return;
+      navigator.sendBeacon(
+        '/api/demo/complete',
+        new Blob(
+          [JSON.stringify({ session_id: session.id })],
+          { type: 'application/json' }
+        )
+      );
+    }
+
+    window.addEventListener('pagehide', handlePageHide);
+    return () => window.removeEventListener('pagehide', handlePageHide);
+  }, [session.id, conversationUrl]);
 
   // Loading State
   if (loading) {
@@ -430,8 +505,54 @@ export function BrandedDemoViewer({ session, project }: BrandedDemoViewerProps) 
           />
         )}
 
+        {/* Call ended overlay */}
+        {!showWelcome && callEnded && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ backgroundColor: bgColor }}>
+            <div className="text-center px-6 max-w-md">
+              {reportStatus === 'processing' && (
+                <>
+                  <div className="relative w-16 h-16 mx-auto mb-6">
+                    <div
+                      className="absolute inset-0 rounded-full border-2 opacity-20"
+                      style={{ borderColor: textColor }}
+                    />
+                    <div
+                      className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                      style={{ borderTopColor: accentColor }}
+                    />
+                  </div>
+                  <h2 className="text-xl font-light mb-2">Preparing Your Report</h2>
+                  <p className="text-sm opacity-50">Analyzing your conversation and generating the intake report...</p>
+                </>
+              )}
+              {reportStatus === 'sent' && (
+                <>
+                  <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#10b98120' }}>
+                    <svg className="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-light mb-2">Report Sent</h2>
+                  <p className="text-sm opacity-50">Your intake report has been emailed to your provider.</p>
+                </>
+              )}
+              {reportStatus === 'failed' && (
+                <>
+                  <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444420' }}>
+                    <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-light mb-2">Session Complete</h2>
+                  <p className="text-sm opacity-50">Your report is being processed and will be sent shortly.</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Loading state for conversation */}
-        {!showWelcome && !conversationUrl && (
+        {!showWelcome && !conversationUrl && !callEnded && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${textColor}30`, borderTopColor: accentColor }} />
           </div>

@@ -54,6 +54,12 @@ const styles = StyleSheet.create({
   riskLine: {
     marginBottom: 3,
   },
+  perceptionText: {
+    fontSize: 10,
+    fontFamily: 'Helvetica',
+    lineHeight: 1.5,
+    color: '#222',
+  },
   footer: {
     position: 'absolute',
     bottom: 25,
@@ -74,6 +80,7 @@ export interface IntakeReportProps {
   analysis: ChestPainIntakeAnalysis;
   replicaName: string;
   interviewTimestamp: string;
+  perceptionAnalysis?: string;
 }
 
 function formatTimestamp(isoString: string): { time: string; date: string } {
@@ -149,6 +156,7 @@ function IntakeReportDocument({
   analysis,
   replicaName,
   interviewTimestamp,
+  perceptionAnalysis,
 }: IntakeReportProps) {
   const { time, date } = formatTimestamp(interviewTimestamp);
 
@@ -192,7 +200,8 @@ function IntakeReportDocument({
 
         {/* Chest Pain ROS */}
         {(analysis.chestPainROS.positive.length > 0 ||
-          analysis.chestPainROS.negative.length > 0) && (
+          analysis.chestPainROS.negative.length > 0 ||
+          analysis.chestPainROS.notAssessed.length > 0) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Chest Pain ROS:</Text>
             {analysis.chestPainROS.positive.length > 0 && (
@@ -215,6 +224,24 @@ function IntakeReportDocument({
                 </Text>
               </View>
             )}
+            {analysis.chestPainROS.notAssessed.length > 0 && (
+              <View style={styles.riskLine}>
+                <Text>
+                  <Text style={styles.label}>Not Assessed: </Text>
+                  <Text style={styles.value}>
+                    {analysis.chestPainROS.notAssessed.join(', ')}
+                  </Text>
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Perception Analysis */}
+        {perceptionAnalysis && (
+          <View style={styles.section} break={false}>
+            <Text style={styles.sectionTitle}>Perception Analysis</Text>
+            <Text style={styles.perceptionText}>{perceptionAnalysis}</Text>
           </View>
         )}
 

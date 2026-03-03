@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const verboseData = await client.getConversation(conversationId, true);
     console.log('[Admin] Got verbose data');
 
-    const verboseAny = verboseData as unknown as { events?: Array<{ event_type: string; properties?: { transcript?: Array<{ role: string; content: string }> } }> };
+    const verboseAny = verboseData as unknown as { events?: Array<{ event_type: string; timestamp?: string; properties?: { transcript?: Array<{ role: string; content: string }>; analysis?: string } }> };
     const events = verboseAny.events || [];
     const transcriptEvent = events.find(
       (e) => e.event_type === 'application.transcription_ready'
@@ -48,6 +48,19 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Admin] Found transcript with ${transcript.length} messages`);
 
+    // Extract perception analysis
+    const perceptionEvent = events.find(
+      (e) => e.event_type === 'application.perception_analysis'
+    );
+    const perceptionAnalysis = perceptionEvent?.properties?.analysis || undefined;
+    if (perceptionAnalysis) {
+      console.log('[Admin] Found perception analysis');
+    }
+
+    // Determine interview timestamp from conversation events
+    const shutdownEvent = events.find((e) => e.event_type === 'system.shutdown');
+    const interviewTimestamp = shutdownEvent?.timestamp || conversation.created_at || new Date().toISOString();
+
     // Analyze with Claude
     console.log('[Admin] Analyzing transcript with Claude...');
     const analysis = await analyzeTranscript(transcript as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>);
@@ -61,7 +74,8 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = await generateIntakeReportPDF({
       analysis,
       replicaName: 'AI Intake',
-      interviewTimestamp: new Date().toISOString(),
+      interviewTimestamp,
+      perceptionAnalysis,
     });
 
     // Send email

@@ -52,6 +52,7 @@ export interface ChestPainIntakeAnalysis {
   chestPainROS: {
     positive: string[];
     negative: string[];
+    notAssessed: string[];
   };
 }
 
@@ -101,7 +102,8 @@ Return ONLY valid JSON in this exact structure:
   },
   "chestPainROS": {
     "positive": [],
-    "negative": []
+    "negative": [],
+    "notAssessed": []
   }
 }
 
@@ -137,9 +139,31 @@ PE (Pulmonary Embolism):
 - Family history of blood clots
 - Obesity
 
-Chest Pain ROS — common symptoms:
-Positive examples: back pain, left leg numbness, vision changes, shortness of breath, palpitations, diaphoresis
-Negative examples: fever, cough, neck pain, jaw pain, shoulder pain, abdominal pain, nausea, vomiting, syncope, faint, ankle swelling, calf pain
+Chest Pain ROS — full symptom checklist (MUST categorize ALL of these):
+- fever
+- cough
+- neck pain
+- jaw pain
+- shoulder pain
+- arm pain
+- back pain
+- abdominal pain
+- nausea
+- vomiting
+- numbness or weakness
+- vision problems
+- syncope or feeling faint
+- ankle swelling
+- calf pain
+- shortness of breath
+- palpitations
+- diaphoresis
+
+For EACH symptom above:
+- If the patient reported it → "positive"
+- If explicitly asked and denied → "negative"
+- If never asked about or not discussed → "notAssessed"
+Also include any OTHER symptoms the patient spontaneously reported in "positive".
 
 TRANSCRIPT:
 `;
@@ -203,7 +227,7 @@ export async function analyzeTranscript(
       cadRiskFactors: { positive: [], negative: [], unknown: ['Analysis failed — review transcript'] },
       aodRiskFactors: { positive: [], negative: [], unknown: ['Analysis failed — review transcript'] },
       peRiskFactors: { positive: [], negative: [], unknown: ['Analysis failed — review transcript'] },
-      chestPainROS: { positive: [], negative: [] },
+      chestPainROS: { positive: [], negative: [], notAssessed: [] },
     };
   }
 }
@@ -243,6 +267,7 @@ function sanitizeAnalysis(raw: Record<string, unknown>): ChestPainIntakeAnalysis
     chestPainROS: {
       positive: safeArray(ros.positive),
       negative: safeArray(ros.negative),
+      notAssessed: safeArray(ros.notAssessed),
     },
   };
 }

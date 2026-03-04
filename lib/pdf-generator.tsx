@@ -54,11 +54,24 @@ const styles = StyleSheet.create({
   riskLine: {
     marginBottom: 3,
   },
-  perceptionText: {
+  perceptionItem: {
+    marginBottom: 6,
+  },
+  perceptionHeading: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#000',
+    marginBottom: 1,
+  },
+  perceptionBody: {
     fontSize: 10,
     fontFamily: 'Helvetica',
     lineHeight: 1.5,
     color: '#222',
+  },
+  perceptionSubItem: {
+    marginLeft: 12,
+    marginBottom: 3,
   },
   footer: {
     position: 'absolute',
@@ -152,6 +165,88 @@ function RiskFactorSection({
   );
 }
 
+interface PerceptionSection {
+  heading: string;
+  body: string;
+  subItems: { heading: string; body: string }[];
+}
+
+function parsePerceptionAnalysis(raw: string): PerceptionSection[] {
+  const sections: PerceptionSection[] = [];
+  const lines = raw.split('\n');
+  let current: PerceptionSection | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Skip intro line
+    if (trimmed.startsWith("Here's a summary")) continue;
+
+    // Top-level bullet: `* **Heading:** body` or `*   **Heading:** body`
+    const topMatch = trimmed.match(/^\*\s+\*\*(.+?):?\*\*:?\s*(.*)/);
+    if (topMatch && !line.startsWith('    ')) {
+      if (current) sections.push(current);
+      current = { heading: topMatch[1], body: topMatch[2] || '', subItems: [] };
+      continue;
+    }
+
+    // Sub-bullet: `    * **Heading:** body`
+    const subMatch = trimmed.match(/^\*\s+\*\*(.+?):?\*\*:?\s*(.*)/);
+    if (subMatch && line.startsWith('    ') && current) {
+      current.subItems.push({ heading: subMatch[1], body: subMatch[2] || '' });
+      continue;
+    }
+
+    // Continuation text — append to the most recent context
+    const cleaned = trimmed.replace(/\*\*/g, '');
+    if (current) {
+      if (current.subItems.length > 0) {
+        current.subItems[current.subItems.length - 1].body += ' ' + cleaned;
+      } else {
+        current.body += ' ' + cleaned;
+      }
+    }
+  }
+  if (current) sections.push(current);
+
+  return sections;
+}
+
+function PerceptionAnalysisSection({ text }: { text: string }) {
+  const sections = parsePerceptionAnalysis(text);
+
+  if (sections.length === 0) {
+    const cleaned = text.replace(/\*\*/g, '').replace(/^\*\s+/gm, '• ');
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Perception Analysis</Text>
+        <Text style={styles.perceptionBody}>{cleaned}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Perception Analysis</Text>
+      {sections.map((s, i) => (
+        <View key={i} style={styles.perceptionItem}>
+          <Text style={styles.perceptionHeading}>{s.heading}</Text>
+          {s.body.trim() && <Text style={styles.perceptionBody}>{s.body.trim()}</Text>}
+          {s.subItems.map((sub, j) => (
+            <View key={j} style={styles.perceptionSubItem}>
+              <Text>
+                <Text style={styles.perceptionHeading}>{sub.heading}: </Text>
+                <Text style={styles.perceptionBody}>{sub.body.trim()}</Text>
+              </Text>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function IntakeReportDocument({
   analysis,
   replicaName,
@@ -239,10 +334,7 @@ function IntakeReportDocument({
 
         {/* Perception Analysis */}
         {perceptionAnalysis && (
-          <View style={styles.section} break={false}>
-            <Text style={styles.sectionTitle}>Perception Analysis</Text>
-            <Text style={styles.perceptionText}>{perceptionAnalysis}</Text>
-          </View>
+          <PerceptionAnalysisSection text={perceptionAnalysis} />
         )}
 
         {/* Footer */}

@@ -91,6 +91,9 @@ export async function POST(request: NextRequest) {
       custom_greeting: project.custom_greeting || undefined,
       conversational_context: project.conversational_context || undefined,
       callback_url: webhookUrl,
+      properties: {
+        language: 'multilingual',
+      },
     });
 
     // Update the session with conversation details

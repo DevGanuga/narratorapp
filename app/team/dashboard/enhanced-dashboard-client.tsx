@@ -44,6 +44,7 @@ interface EnhancedProjectForm {
   cta_url: string;
 
   // Advanced
+  conversation_language: string;
   session_duration_hours: number;
   show_narrator_branding: boolean;
 }
@@ -75,6 +76,7 @@ export function EnhancedDashboardClient() {
     conversational_context: '',
     cta_text: '',
     cta_url: '',
+    conversation_language: 'english',
     session_duration_hours: 24,
     show_narrator_branding: true,
   });
@@ -136,6 +138,7 @@ export function EnhancedDashboardClient() {
       conversational_context: '',
       cta_text: '',
       cta_url: '',
+      conversation_language: 'english',
       session_duration_hours: 24,
       show_narrator_branding: true,
     });
@@ -154,10 +157,16 @@ export function EnhancedDashboardClient() {
 
       const method = editingProject ? 'PATCH' : 'POST';
 
+      const { conversation_language, ...projectFields } = formData;
+      const payload = {
+        ...projectFields,
+        custom_fields: { conversation_language },
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -278,6 +287,7 @@ export function EnhancedDashboardClient() {
       conversational_context: project.conversational_context || '',
       cta_text: project.cta_text || '',
       cta_url: project.cta_url || '',
+      conversation_language: ((project.custom_fields as Record<string, unknown>)?.conversation_language as string) || 'english',
       session_duration_hours: project.session_duration_hours || 24,
       show_narrator_branding: project.show_narrator_branding ?? true,
     });
@@ -812,6 +822,38 @@ export function EnhancedDashboardClient() {
               {/* Tab 4: Advanced */}
               {activeTab === 'advanced' && (
                 <div className="space-y-6">
+                  <div>
+                    <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
+                      Conversation Language
+                    </label>
+                    <select
+                      value={formData.conversation_language}
+                      onChange={(e) => setFormData({ ...formData, conversation_language: e.target.value })}
+                      className="w-full bg-transparent border border-white/[0.08] rounded-lg px-4 py-3 text-[14px] focus:outline-none focus:border-white/20 transition-colors"
+                    >
+                      <option value="english">English (Default)</option>
+                      <option value="multilingual">Multilingual (Auto-Detect)</option>
+                      <option value="spanish">Spanish</option>
+                      <option value="french">French</option>
+                      <option value="german">German</option>
+                      <option value="portuguese">Portuguese</option>
+                      <option value="chinese">Chinese</option>
+                      <option value="japanese">Japanese</option>
+                      <option value="korean">Korean</option>
+                      <option value="hindi">Hindi</option>
+                      <option value="arabic">Arabic</option>
+                      <option value="russian">Russian</option>
+                      <option value="italian">Italian</option>
+                      <option value="dutch">Dutch</option>
+                      <option value="polish">Polish</option>
+                      <option value="turkish">Turkish</option>
+                      <option value="vietnamese">Vietnamese</option>
+                    </select>
+                    <p className="mt-2 text-[12px] text-[#4a4a4a]">
+                      Set a specific language or use auto-detect for multilingual conversations
+                    </p>
+                  </div>
+
                   <div>
                     <label className="block text-[12px] text-[#5a5a5a] tracking-wide mb-2">
                       Session Duration (hours)

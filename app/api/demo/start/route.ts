@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
     const client = createTavusClient();
     const webhookUrl = `${getWebhookBaseUrl()}/api/webhooks/tavus`;
 
+    const customFields = (project.custom_fields || {}) as Record<string, unknown>;
+    const conversationLanguage = customFields.conversation_language as string | undefined;
+
     const conversation = await client.createConversation({
       replica_id: project.replica_id,
       persona_id: project.persona_id,
@@ -91,9 +94,9 @@ export async function POST(request: NextRequest) {
       custom_greeting: project.custom_greeting || undefined,
       conversational_context: project.conversational_context || undefined,
       callback_url: webhookUrl,
-      properties: {
-        language: 'multilingual',
-      },
+      ...(conversationLanguage && conversationLanguage !== 'english' && {
+        properties: { language: conversationLanguage },
+      }),
     });
 
     // Update the session with conversation details
